@@ -1,7 +1,8 @@
-import datetime, re, timeit, json
+import datetime, re, timeit, json, requests
 from config import groupid
 from methods import Methods
 from other import dir_path
+from webhook import twitch_api_auth
 
 class Commands:
 
@@ -148,9 +149,22 @@ class Commands:
         cmd_list = "\n".join(cmd_list)
         Methods.send(userinfo['chat_id'], cmd_list)
 
+    def status(userinfo, text):
+        """Информация о трансляции"""
+        headers = twitch_api_auth()
+        params = {'user_login': 'd0m1tori', 'first': 1}
+        response = requests.get("https://api.twitch.tv/helix/streams", params=params, headers=headers).json()
+        if(response['data'] == []):
+            Methods.send(userinfo['chat_id'], "Сейчас трансляция не ведётся.")
+        else:
+            response = response['data'][0]
+            txt = f"Название: {response['title']}\nИгра: {response['game_name']}\nЗрителей: {response['viewer_count']}\nhttps://twitch.tv/{response['user_login']}"
+            Methods.send(userinfo['chat_id'], txt)
+
 cmds = {'info':Commands.info, 'инфо':Commands.info, 
 'test':Commands.test, 'тест':Commands.test, 
 'рассылка':Commands.rass, 'подписаться':Commands.rass, 'отписаться':Commands.rass,
 'help':Commands.help, 'помощь':Commands.help, 
-'akey':Commands.clrkeyb, 
+'akey':Commands.clrkeyb,
+'status':Commands.status, 'статус':Commands.status,
 }
