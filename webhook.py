@@ -1,25 +1,33 @@
 #!/usr/bin/python3
-import requests, json
+import requests, json, datetime
 from config import twitch_api, callback, client_id, secret
 from methods import Methods
 
 def twitch_api_auth():
+    now = datetime.datetime.now().timestamp()
+    auth = Methods.mysql_query("SELECT * FROM twitch_api_keys WHERE `not-after`>%s LIMIT 1", (now))
     headers = {
         'User-Agent': "D0m1toriBot"
     }
-    data = {
-        'client_id': client_id,
-        'client_secret': twitch_api,
-        'grant_type': "client_credentials"
-    }
-    auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data).json()
+    if(auth == None):
+        data = {
+            'client_id': client_id,
+            'client_secret': twitch_api,
+            'grant_type': "client_credentials"
+        }
+        auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data).json()
+        Methods.mysql_query("INSERT INTO twitch_api_keys (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], client_id))
 
-    headers = {
-        'User-Agent': "D0m1toriBot",
-        'Authorization': f"{auth['token_type'].title()} {auth['access_token']}",
-        'Client-ID': client_id,
-        'Content-Type': "application/json"
-    }
+        headers.update({
+            'Authorization': f"{auth['token_type'].title()} {auth['access_token']}",
+            'Client-ID': client_id,
+        })
+    else:
+        headers.update({
+            'Authorization': f"{auth['type'].title()} {auth['key_']}",
+            'Client-ID': auth['client_id'],
+            })
+    headers.update({'Content-Type': "application/json"})
     return headers
 if(__name__ == "__main__"):
     headers = twitch_api_auth()
