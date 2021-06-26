@@ -2,18 +2,21 @@
 from webhook import twitch_api_auth
 from config import groupid, user_token
 from methods import Methods
-import requests, sys, time, random
+import requests, sys, time, random, os
+dir_path = os.path.dirname(os.path.realpath(__file__))
 id_ = sys.argv[1]
 headers = twitch_api_auth()
 # id_ = requests.get("https://api.twitch.tv/helix/users?login=godenname", headers=headers).json()['data'][0]['id']
 info = requests.get("https://api.twitch.tv/helix/streams", headers=headers, params={'user_id':id_, 'first':1}).json()['data'][0]
 streamer = requests.get("https://api.twitch.tv/helix/channels", params={'broadcaster_id': id_}, headers=headers).json()['data'][0]
 # Can use: info['title'], info['game_name'], info['user_name'], info['thumbnail_url'], info['started_at'], info['viewer_count']
-# img = info['thumbnail_url'][:info['thumbnail_url'].find('{')-1] + info['thumbnail_url'][info['thumbnail_url'].rfind('}')+1:]
+img = info['thumbnail_url'][:info['thumbnail_url'].find('{')-1] + info['thumbnail_url'][info['thumbnail_url'].rfind('}')+1:]
 # print(img)
 # exit()
-# Methods.download_img()
-txt = f"Стрим начался, залетай!\n{info['title']}\nhttps://twitch.tv/{streamer['broadcaster_name']}"
+img_name = f"{dir_path}/preview.{img.split('.')[-1]}"
+Methods.download_img(img, img_name)
+img = Methods.upload_img(331465308, img_name)
+txt = f"Стрим начался, залетай!\n{info['title']}\nhttps://twitch.tv/{streamer['broadcaster_login']}"
 try:
     response = requests.get("https://api.vk.com/method/wall.post",
         params={'access_token': user_token,
@@ -34,7 +37,7 @@ while i < rass['COUNT(id)']:
     for n in r:
         a.append(str(n['id']))
     a = ",".join(a)
-    Methods.mass_send(peer_ids=a,message=txt)
+    Methods.mass_send(peer_ids=a,message=txt,attachment=img)
     i+=50
     time.sleep(1)
 
@@ -46,6 +49,7 @@ while i < rass['COUNT(vkid)']:
     for n in r:
         a.append(str(n['vkid']))
     a = ",".join(a)
-    Methods.mass_send(peer_ids=a,message=txt)
+    Methods.mass_send(peer_ids=a,message=txt,attachment=img)
     i+=50
     time.sleep(1)
+os.remove(img_name)
