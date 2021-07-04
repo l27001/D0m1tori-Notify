@@ -102,7 +102,10 @@ class Methods:
         return f"doc{file['audio_message']['owner_id']}_{file['audio_message']['id']}_{file['audio_message']['access_key']}"
 
     def is_message_allowed(id_):
-        return api.messages.isMessagesFromGroupAllowed(user_id=id_,group_id=config.groupid)['is_allowed']
+        try:
+            return api.messages.isMessagesFromGroupAllowed(user_id=id_,group_id=config.groupid)['is_allowed']
+        except:
+            return api.messages.isMessagesFromGroupAllowed(user_id=id_,group_id=config.groupid)['is_allowed']
 
     def get_conversation_members(peer_id):
         try:

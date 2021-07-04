@@ -11,6 +11,12 @@ class Commands:
         if(DEBUG == True):
             extime = timeit.default_timer()
             print(today.strftime("%H:%M:%S %d.%m.%Y")+ ": "+str(response))
+        if(response['type'] not in ['message_new', 'group_leave']):
+            return None
+        if(response['type'] == 'group_leave'):
+            if(Methods.is_message_allowed(response['object']['user_id']) == 1):
+                Methods.send(response['object']['user_id'], "Очень жаль, что ты покидаешь нас :(")
+            return None
         obj = response['object']['message']
         client_info = response['object']['client_info']
         if 'reply_message' in obj:
@@ -158,7 +164,10 @@ class Commands:
             Methods.send(userinfo['chat_id'], "Сейчас трансляция не ведётся.")
         else:
             response = response['data'][0]
-            txt = f"Название: {response['title']}\nИгра: {response['game_name']}\nЗрителей: {response['viewer_count']}\nhttps://twitch.tv/{response['user_login']}"
+            txt = f"Название: {response['title']}\n\
+                Игра: {response['game_name']}\n\
+                Зрителей: {response['viewer_count']}\n\
+                https://twitch.tv/{response['user_login']}"
             Methods.send(userinfo['chat_id'], txt)
 
 cmds = {'info':Commands.info, 'инфо':Commands.info, 
