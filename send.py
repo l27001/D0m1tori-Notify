@@ -16,7 +16,7 @@ img = info['thumbnail_url'][:info['thumbnail_url'].find('{')-1] + info['thumbnai
 img_name = f"{dir_path}/preview.{img.split('.')[-1]}"
 Methods.download_img(img, img_name)
 img = Methods.upload_img(331465308, img_name)
-txt = f"Стрим начался, залетай!\n{info['title']}\nhttps://twitch.tv/{streamer['broadcaster_login']}"
+txt = f"Стрим начался, бегом смотреть!\n{info['title']}\nhttps://twitch.tv/{streamer['broadcaster_login']}"
 try:
     response = requests.get("https://api.vk.com/method/wall.post",
         params={'access_token': user_token,
