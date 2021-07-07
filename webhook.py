@@ -46,7 +46,7 @@ if(__name__ == "__main__"):
         except IndexError:
             print('./webhook.py delete <id>')
             exit()
-        print(requests.delete("https://api.twitch.tv/helix/eventsub/subscriptions?id=7074a431-0362-4996-a647-85b56775cfb4", headers=headers))
+        print(requests.delete("https://api.twitch.tv/helix/eventsub/subscriptions?id="+id_, headers=headers))
     elif(action == 'add'):
         try:
             name = sys.argv[2]
