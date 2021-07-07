@@ -16,6 +16,7 @@ def twitch_api_auth():
             'grant_type': "client_credentials"
         }
         auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data).json()
+        Methods.mysql_query("DELETE FROM twitch_api_keys")
         Methods.mysql_query("INSERT INTO twitch_api_keys (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], client_id))
 
         headers.update({
@@ -30,26 +31,46 @@ def twitch_api_auth():
     headers.update({'Content-Type': "application/json"})
     return headers
 if(__name__ == "__main__"):
-    headers = twitch_api_auth()
-    id_ = requests.get("https://api.twitch.tv/helix/users?login=d0m1tori", headers=headers).json()['data'][0]['id']
+    import sys
+    try:
+        action = sys.argv[1]
+    except IndexError:
+        print('./webhook.py <add|delete|list>')
+        exit()
+    if(action not in ['add','delete','list']): 
+        print('./webhook.py <add|delete|list>')
+        exit() 
+    if(action == 'delete'):
+        try:
+            id_ = sys.argv[2]
+        except IndexError:
+            print('./webhook.py delete <id>')
+            exit()
+        print(requests.delete("https://api.twitch.tv/helix/eventsub/subscriptions?id=7074a431-0362-4996-a647-85b56775cfb4", headers=headers))
+    elif(action == 'add'):
+        try:
+            name = sys.argv[2]
+            callback = sys.argv[3]
+        except IndexError:
+            print('./webhook.py add <name> <https://callback.example>')
+            exit()
+        headers = twitch_api_auth()
+        id_ = requests.get("https://api.twitch.tv/helix/users?login="+name, headers=headers).json()['data'][0]['id']
 
-    data = {
-        "type": "stream.online",
-        "version": "1",
-        "condition": {
-            "broadcaster_user_id": id_
-        },
-        "transport": {
-            "method": "webhook",
-            "callback": "https://d0m1tori.ezdn.ru/notify",
-            "secret": secret
+        data = {
+            "type": "stream.online",
+            "version": "1",
+            "condition": {
+                "broadcaster_user_id": id_
+            },
+            "transport": {
+                "method": "webhook",
+                "callback": callback,
+                "secret": secret
+            }
         }
-    }
-
-    # print(requests.delete("https://api.twitch.tv/helix/eventsub/subscriptions?id=e1531cfc-dd96-4004-98e6-d0bbbcde60b5", headers=headers))
-
-    # data = json.dumps(data)
-    # data = requests.post("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers, data=data).json()
-    # print(data)
-
-    print(requests.get("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers).json())
+        data = json.dumps(data)
+        data = requests.post("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers, data=data).json()
+        print(data)
+    elif(action == 'list'):
+        print(requests.get("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers).json())
