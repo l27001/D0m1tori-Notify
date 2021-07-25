@@ -46,6 +46,7 @@ if(__name__ == "__main__"):
         except IndexError:
             print('./webhook.py delete <id>')
             exit()
+        headers = twitch_api_auth()
         print(requests.delete("https://api.twitch.tv/helix/eventsub/subscriptions?id="+id_, headers=headers))
     elif(action == 'add'):
         try:
