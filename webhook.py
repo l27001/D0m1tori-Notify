@@ -73,4 +73,5 @@ if(__name__ == "__main__"):
         data = requests.post("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers, data=data).json()
         print(data)
     elif(action == 'list'):
+        headers = twitch_api_auth()
         print(requests.get("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers).json())
