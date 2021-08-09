@@ -75,6 +75,23 @@ CREATE TABLE `users` (
   KEY `notify` (`notify`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `webhooks`
+--
+
+DROP TABLE IF EXISTS `webhooks`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `webhooks` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `link` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `guild` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `enabled` int(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `enabled` (`enabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -85,4 +102,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-07-25 21:14:22
+-- Dump completed on 2021-08-09 21:06:12

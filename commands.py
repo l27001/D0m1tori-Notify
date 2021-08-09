@@ -170,10 +170,20 @@ class Commands:
                 https://twitch.tv/{response['user_login']}"
             Methods.send(userinfo['chat_id'], txt)
 
+    def dsbot(userinfo, text):
+        """Уведомления о стримах на серверах дискорд"""
+        Methods.send(userinfo['chat_id'], "https://d0m1tori.ezdn.ru/ds-notify/add")
+
+    def ds(userinfo, text):
+        """Инвайт в дискорд"""
+        Methods.send(userinfo['chat_id'], "https://discord.gg/RxQVQPwKx9")
+
 cmds = {'info':Commands.info, 'инфо':Commands.info, 
 'test':Commands.test, 'тест':Commands.test, 
 'рассылка':Commands.rass, 'подписаться':Commands.rass, 'отписаться':Commands.rass,
 'help':Commands.help, 'помощь':Commands.help, 
 'akey':Commands.clrkeyb,
 'status':Commands.status, 'статус':Commands.status,
+'дсбот':Commands.dsbot, 'dsbot':Commands.dsbot,
+'дс':Commands.ds, 'ds':Commands.ds
 }
