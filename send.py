@@ -1,8 +1,9 @@
 #!/usr/bin/python3
+import requests, sys, time, random, os, json
+from datetime import datetime
 from webhook import twitch_api_auth
 from config import groupid, user_token
 from methods import Methods
-import requests, sys, time, random, os
 dir_path = os.path.dirname(os.path.realpath(__file__))
 id_ = sys.argv[1]
 headers = twitch_api_auth()
@@ -64,18 +65,43 @@ def send_vk():
 
 def send_ds():
     guilds = Methods.mysql_query("SELECT * FROM webhooks WHERE enabled = 1", fetch="all")
-    with open(img_name ,'rb') as f:
-        fdata = f.read()
+    now = datetime.now().strftime("%H:%M %d.%m.%Y")
     headers = {
-        # 'Content-Type': 'multipart/form-data'
+        'Content-Type': 'application/json'
     }
-    files = {}
     data = {
-        'content': '@everyone\n'+txt+link,
+        "content": "@everyone",
+        "embeds": [
+        {
+          "title": "Стрим начался, бегом смотреть!",
+          "color": 16736768,
+          "description": f"**{info['game_name']} | {info['title']}**",
+          "author": {},
+          "image": {
+            "url": img
+          },
+          "thumbnail": {},
+          "footer": {"text": now},
+          "fields": []
+        }
+      ],
+      "components": [
+        {
+          "type": 1,
+          "components": [
+            {
+              "type": 2,
+              "style": 5,
+              "label": "Перейти на Twitch",
+              "url": f"https://twitch.tv/{streamer['broadcaster_login']}"
+            }
+          ]
+        }
+      ]
     }
     for guild in guilds:
         try:
-            r = requests.post(guild['link']+"?wait=true", files=files, data=data, headers=headers)
+            r = requests.post(guild['link']+"?wait=true", data=json.dumps(data), headers=headers)
             if(r.status_code != 204):
                 rdata = r.json()
                 if('code' in rdata and rdata['code'] == 10015):
