@@ -57,7 +57,7 @@ def oauth():
         return abort(503)
     check = Methods.mysql_query("SELECT id FROM webhooks WHERE guild = %s", (guild))
     if(check is not None):
-        return {'status':'fail', 'description':'Для этого сервера уже добавлен вебхук'}, 400
+        return {'status':'fail', 'description':'Для этого сервера уже добавлен вебхук', "check_webhook": f"https://d0m1tori.ezdn.ru/notify/oauth/check_{guild}"}, 400
     data = {
         'client_id': discord['client_id'],
         'client_secret': discord['client_secret'],
@@ -71,6 +71,25 @@ def oauth():
     r = r.json()
     Methods.mysql_query("INSERT INTO webhooks (`link`, `guild`) VALUES (%s, %s)", (r['webhook']['url'], guild))
     return {'status':"ok"}, 202
+
+@app.route('/notify/oauth/check_<int:id_>')
+def oauth_check(id_):
+    if(id_ <= 0): return abort(400)
+    webhook = Methods.mysql_query("SELECT id,link FROM webhooks WHERE guild = %s", (id_))
+    if(webhook is None): return {"status":"fail", "description":"Сервер с таким ID не найден в БД"}, 400
+    r = requests.get(webhook['link'])
+    r = r.json()
+    if('code' in r):
+        if(r['code'] == 10015):
+            Methods.mysql_query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
+            return {"status":"ok", "description":"Интеграция была удалёна с сервера. Запись удалена из БД"}
+        elif(r['code'] == 50027):
+            Methods.mysql_query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
+            return {"status":"ok", "description":"Вебхук был удалён с сервера. Запись удалена из БД"}
+        else: return {"status":"warning", "description":f"Получен неизвестный код {r['code']}. Никаких действий не выполнено, обратитесь к разработчику"}
+    else:
+        return {"status":"ok", "description":"Похоже, что все в порядке."}
+
 
 if(__name__ == '__main__'):
     # app.run('127.0.0.254', port=5008, debug=True)

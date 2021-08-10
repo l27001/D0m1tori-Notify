@@ -71,6 +71,7 @@ def send_ds():
     }
     data = {
         "content": "@everyone",
+        "username": "D0m1tori Notify",
         "embeds": [
         {
           "title": "Стрим начался, бегом смотреть!",

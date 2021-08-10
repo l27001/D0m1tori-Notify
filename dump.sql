@@ -86,7 +86,7 @@ DROP TABLE IF EXISTS `webhooks`;
 CREATE TABLE `webhooks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `link` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `guild` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `guild` bigint(32) NOT NULL,
   `enabled` int(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   KEY `enabled` (`enabled`)
@@ -102,4 +102,4 @@ CREATE TABLE `webhooks` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-08-09 21:06:12
+-- Dump completed on 2021-08-10 12:30:28
