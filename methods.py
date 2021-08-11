@@ -1,4 +1,5 @@
 import re, requests, datetime, os, random, timeit, pymysql, pymysql.cursors
+from pymysql.err import InterfaceError, OperationalError
 from other import api, dir_path
 import config
 
@@ -44,26 +45,40 @@ class Methods:
         except:
             return api.users.get(user_ids=user_id,fields=fields)
 
-    def mysql_query(query,variables=(),fetch="one",time=False):
-        if(time == True):
-            extime = timeit.default_timer()
-        con = pymysql.connect(host=config.db['host'],
-            user=config.db['user'],
-            password=config.db['password'],
-            db=config.db['database'],
-            charset='utf8mb4',
-            autocommit=True,
-            cursorclass=pymysql.cursors.DictCursor)
-        cur = con.cursor()
-        cur.execute(query, variables)
-        if(fetch == "one"):
-            data = cur.fetchone()
-        else:
-            data = cur.fetchall()
-        con.close()
-        if(time == True):
-            Methods.log("Debug",f"Время запроса к MySQL: {str(timeit.default_timer()-extime)}")
-        return data
+    class Mysql:
+
+        def __init__(self):
+            self.con = Methods.Mysql.make_con()
+
+        def query(self,query,variables=(),fetch="one",time=False):
+            if(time == True):
+                extime = timeit.default_timer()
+            try:
+                cur = self.con.cursor()
+                cur.execute(query, variables)
+            except (InterfaceError,OperationalError):
+                self.con = Methods.Mysql.make_con()
+                cur = self.con.cursor()
+                cur.execute(query, variables)
+            if(fetch == "one"):
+                data = cur.fetchone()
+            else:
+                data = cur.fetchall()
+            if(time == True):
+                Methods.log("Debug",f"Время запроса к MySQL: {str(timeit.default_timer()-extime)}")
+            return data
+
+        def make_con(self=None):
+            return pymysql.connect(host=config.db['host'],
+                user=config.db['user'],
+                password=config.db['password'],
+                db=config.db['database'],
+                charset='utf8mb4',
+                autocommit=True,
+                cursorclass=pymysql.cursors.DictCursor)
+
+        def close(self):
+            self.con.close()
 
     def send(peer_id,message='',attachment='',keyboard='{"buttons":[]}',disable_mentions=0,intent="default"):
         return api.messages.send(peer_id=peer_id,random_id=random.randint(1,2147400000),message=message,attachment=attachment,keyboard=keyboard,disable_mentions=disable_mentions,intent=intent)

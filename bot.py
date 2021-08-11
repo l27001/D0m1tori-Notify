@@ -18,6 +18,8 @@ from other import dir_path, api
 from commands import Commands
 from methods import Methods
 
+builtins.Mysql = Methods.Mysql()
+
 ###
 def start():
     try:
@@ -79,6 +81,8 @@ def start():
                 Methods.log("WARN","Сервер не ответил. Жду 3 секунды перед повтором.")
                 time.sleep(3)
     except KeyboardInterrupt:
+        pass
+    finally:
         Methods.log("INFO","Завершение...")
         for root, dirs, files in os.walk(tmp_dir, topdown=False):
             for name in files:
@@ -86,6 +90,7 @@ def start():
             for name in dirs:
                 os.rmdir(os.path.join(root, name))
         os.rmdir(tmp_dir)
+        Mysql.close()
         exit()
 
 Methods.log("INFO",f"Запуск бота...")

@@ -5,7 +5,7 @@ from methods import Methods
 
 def twitch_api_auth():
     now = datetime.datetime.now().timestamp()
-    auth = Methods.mysql_query("SELECT * FROM twitch_api_keys WHERE `not-after`>%s LIMIT 1", (now))
+    auth = Mysql.query("SELECT * FROM twitch_api_keys WHERE `not-after`>%s LIMIT 1", (now))
     headers = {
         'User-Agent': "D0m1toriBot"
     }
@@ -16,8 +16,8 @@ def twitch_api_auth():
             'grant_type': "client_credentials"
         }
         auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data).json()
-        Methods.mysql_query("DELETE FROM twitch_api_keys")
-        Methods.mysql_query("INSERT INTO twitch_api_keys (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], client_id))
+        Mysql.query("DELETE FROM twitch_api_keys")
+        Mysql.query("INSERT INTO twitch_api_keys (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], client_id))
 
         headers.update({
             'Authorization': f"{auth['token_type'].title()} {auth['access_token']}",
@@ -40,6 +40,7 @@ if(__name__ == "__main__"):
     if(action not in ['add','delete','list']): 
         print('./webhook.py <add|delete|list>')
         exit() 
+    Mysql = Methods.Mysql()
     if(action == 'delete'):
         try:
             id_ = sys.argv[2]
@@ -76,3 +77,4 @@ if(__name__ == "__main__"):
     elif(action == 'list'):
         headers = twitch_api_auth()
         print(requests.get("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers).json())
+    Mysql.close()

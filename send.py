@@ -34,11 +34,11 @@ def send_vk():
         Methods.send(331465308, f"send.py: fail wall.post\n{e}")
 
     try:
-        rass = Methods.mysql_query("SELECT COUNT(id) FROM `chats` WHERE notify='1'")
+        rass = Mysql.query("SELECT COUNT(id) FROM `chats` WHERE notify='1'")
         i = 0
         while i < rass['COUNT(id)']:
             a = []
-            r = Methods.mysql_query(f"SELECT id FROM `chats` WHERE notify='1' LIMIT {i}, 50", fetch="all")
+            r = Mysql.query(f"SELECT id FROM `chats` WHERE notify='1' LIMIT {i}, 50", fetch="all")
             for n in r:
                 a.append(str(n['id']))
             a = ",".join(a)
@@ -49,11 +49,11 @@ def send_vk():
         Methods.send(331465308, f"send.py: fail chats.send\n{e}")
 
     try:
-        rass = Methods.mysql_query("SELECT COUNT(vkid) FROM `users` WHERE notify='1'")
+        rass = Mysql.query("SELECT COUNT(vkid) FROM `users` WHERE notify='1'")
         i = 0
         while i < rass['COUNT(vkid)']:
             a = []
-            r = Methods.mysql_query(f"SELECT vkid FROM `users` WHERE notify='1' LIMIT {i}, 50", fetch="all")
+            r = Mysql.query(f"SELECT vkid FROM `users` WHERE notify='1' LIMIT {i}, 50", fetch="all")
             for n in r:
                 a.append(str(n['vkid']))
             a = ",".join(a)
@@ -64,7 +64,7 @@ def send_vk():
         Methods.send(331465308, f"send.py: fail users.send\n{e}")
 
 def send_ds():
-    guilds = Methods.mysql_query("SELECT * FROM webhooks WHERE enabled = 1", fetch="all")
+    guilds = Mysql.query("SELECT * FROM webhooks WHERE enabled = 1", fetch="all")
     now = datetime.now().strftime("%H:%M %d.%m.%Y")
     headers = {
         'Content-Type': 'application/json'
@@ -106,13 +106,15 @@ def send_ds():
             if(r.status_code != 204):
                 rdata = r.json()
                 if('code' in rdata and rdata['code'] == 10015):
-                    Methods.mysql_query("DELETE FROM webhooks WHERE id = %s", (guild['id']))
+                    Mysql.query("DELETE FROM webhooks WHERE id = %s", (guild['id']))
                 else:
                     print(rdata)
         except:
             Methods.send(331465308, f"send.py: fail discord.send\n{e}")
 
 if(__name__ == "__main__"):
+    Mysql = Methods.Mysql()
     send_vk()
     send_ds()
     os.remove(img_name)
+    Mysql.close()

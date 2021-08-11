@@ -60,10 +60,10 @@ def notify():
         return abort(403)
     if(message_type == "webhook_callback_verification"):
         return data['challenge'], 200
-    check = Methods.mysql_query("SELECT id FROM notify_ids WHERE id=%s", (id_))
+    check = Mysql.query("SELECT id FROM notify_ids WHERE id=%s", (id_))
     if(check != None):
         return abort(200)
-    Methods.mysql_query("INSERT INTO notify_ids (`id`) VALUES (%s)", (id_))
+    Mysql.query("INSERT INTO notify_ids (`id`) VALUES (%s)", (id_))
     if(data['subscription']['status'] != "enabled"):
         Methods.send(331465308, f"Warning! Action required.\nTwitch notify status is '{data['subscription']['status']}'")
         return abort(200)
@@ -84,7 +84,7 @@ def oauth():
     except AttributeError: return abort(503)
     if(guild == '' or code == ''):
         return abort(503)
-    check = Methods.mysql_query("SELECT id FROM webhooks WHERE guild = %s", (guild))
+    check = Mysql.query("SELECT id FROM webhooks WHERE guild = %s", (guild))
     if(check is not None):
         return {'status':'fail', 'description':'Для этого сервера уже добавлен вебхук', "check_webhook": "https://"+request.host+url_for("oauth_check", id_=guild)}, 400
     data = {
@@ -98,22 +98,22 @@ def oauth():
     if(r.status_code != 200):
         return abort(400)
     r = r.json()
-    Methods.mysql_query("INSERT INTO webhooks (`link`, `guild`) VALUES (%s, %s)", (r['webhook']['url'], guild))
+    Mysql.query("INSERT INTO webhooks (`link`, `guild`) VALUES (%s, %s)", (r['webhook']['url'], guild))
     return {'status':"ok"}, 202
 
 @app.route('/notify/oauth/check_<int:id_>')
 def oauth_check(id_):
     if(id_ <= 0): return abort(400)
-    webhook = Methods.mysql_query("SELECT id,link FROM webhooks WHERE guild = %s", (id_))
+    webhook = Mysql.query("SELECT id,link FROM webhooks WHERE guild = %s", (id_))
     if(webhook is None): return {"status":"fail", "description":"Сервер с таким ID не найден в БД"}, 400
     r = requests.get(webhook['link'])
     r = r.json()
     if('code' in r):
         if(r['code'] == 10015):
-            Methods.mysql_query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
+            Mysql.query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
             return {"status":"ok", "description":"Интеграция была удалёна с сервера. Запись удалена из БД"}
         elif(r['code'] == 50027):
-            Methods.mysql_query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
+            Mysql.query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
             return {"status":"ok", "description":"Вебхук был удалён с сервера. Запись удалена из БД"}
         else: return {"status":"warning", "description":f"Получен неизвестный код {r['code']}. Никаких действий не выполнено, обратитесь к разработчику", "response":r}
     else:
@@ -125,6 +125,8 @@ def oauth_check(id_):
 #     return render_template('admin.html')
 
 if(__name__ == '__main__'):
+    Mysql = Methods.Mysql()
     # app.run('127.0.0.254', port=5008, debug=True)
     from waitress import serve
     serve(app, host="127.0.0.254", port=5008)
+    Mysql.close()

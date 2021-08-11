@@ -34,10 +34,10 @@ class Commands:
             who = f"от {userr}[{str(from_id)}]"
         else:
             who = f"в {str(chat_id)} от {userr}[{str(from_id)}]"
-        userinfo = Methods.mysql_query("SELECT * FROM users WHERE vkid='"+str(from_id)+"' LIMIT 1")
+        userinfo = Mysql.query("SELECT * FROM users WHERE vkid='"+str(from_id)+"' LIMIT 1")
         if(userinfo == None):
-            Methods.mysql_query(f"INSERT INTO users (`vkid`) VALUES ('{from_id}')")
-            userinfo = Methods.mysql_query(f"SELECT * FROM users WHERE vkid='{from_id}' LIMIT 1")
+            Mysql.query(f"INSERT INTO users (`vkid`) VALUES ('{from_id}')")
+            userinfo = Mysql.query(f"SELECT * FROM users WHERE vkid='{from_id}' LIMIT 1")
         tlog = text.replace("\n",r" \n ")
         Methods.log("Message", f"'{tlog}' {who}")
         if('payload' in obj):
@@ -46,10 +46,10 @@ class Commands:
                 if('command' in obj['payload'] and obj['payload']['command'] == "internal_command"):
                     inline = Methods.check_keyboard(client_info['inline_keyboard'])
                     if(obj['payload']['action']['type'] == "intent_unsubscribe"):
-                        Methods.mysql_query(f"UPDATE users SET notify='0' WHERE vkid='{from_id}'")
+                        Mysql.query(f"UPDATE users SET notify='0' WHERE vkid='{from_id}'")
                         Methods.send(from_id, "Вы отписались от уведомлений о трансляциях.\nДля повторной подписки используйте команду '/рассылка'", keyboard=Methods.construct_keyboard(b1=Methods.make_button(type="intent_subscribe",peer_id=from_id,intent="non_promo_newsletter",label="Подписаться"),inline=inline))
                     elif(obj['payload']['action']['type'] == "intent_subscribe"):
-                        Methods.mysql_query(f"UPDATE users SET notify='1' WHERE vkid='{from_id}'")
+                        Mysql.query(f"UPDATE users SET notify='1' WHERE vkid='{from_id}'")
                         Methods.send(from_id, "Вы подписались на уведомления о трансляциях.\nДля отписки используйте команду '/рассылка'", keyboard=Methods.construct_keyboard(b2=Methods.make_button(type="intent_unsubscribe",peer_id=from_id,intent="non_promo_newsletter",label="Отписаться"),inline=inline))
                     return None
             except TypeError: pass
@@ -60,10 +60,10 @@ class Commands:
         if(text[0][0] != '/'):
             return None
         elif(chat_id > 2000000000):
-            chatinfo = Methods.mysql_query(f"SELECT * FROM chats WHERE id = '{chat_id}' LIMIT 1")
+            chatinfo = Mysql.query(f"SELECT * FROM chats WHERE id = '{chat_id}' LIMIT 1")
             if(chatinfo == None):
-                Methods.mysql_query(f"INSERT INTO chats (`id`) VALUES ({chat_id})")
-                chatinfo = Methods.mysql_query(f"SELECT * FROM chats WHERE id = '{chat_id}' LIMIT 1")
+                Mysql.query(f"INSERT INTO chats (`id`) VALUES ({chat_id})")
+                chatinfo = Mysql.query(f"SELECT * FROM chats WHERE id = '{chat_id}' LIMIT 1")
             userinfo.update({'chatinfo':chatinfo})
         text[0] = text[0].lower()
         text[0] = text[0].replace('/','')
@@ -100,7 +100,7 @@ class Commands:
                 Methods.send(userinfo['chat_id'], "⚠ Invalid user_id")
                 return 0
         name = f"[id{uinfo[0]['id']}|{uinfo[0]['last_name']} {uinfo[0]['first_name']}]"
-        uinfo = Methods.mysql_query(f"SELECT * FROM users WHERE vkid='{uinfo[0]['id']}' LIMIT 1")
+        uinfo = Mysql.query(f"SELECT * FROM users WHERE vkid='{uinfo[0]['id']}' LIMIT 1")
         if(uinfo == None):
             Methods.send(userinfo['chat_id'], "⚠ Пользователь не найден в БД")
             return 0
@@ -131,12 +131,12 @@ class Commands:
             else:
                 Methods.send(userinfo['chat_id'],"Вы подписаны", keyboard=Methods.construct_keyboard(b2=Methods.make_button(type="intent_unsubscribe",peer_id=userinfo['from_id'],intent="non_promo_newsletter",label="Отписаться"),inline=Methods.check_keyboard(userinfo['inline'])))
         else:
-            count = Methods.mysql_query(f"SELECT COUNT(*) FROM `chats` WHERE id = {userinfo['chat_id']} AND `notify`=1")['COUNT(*)']
+            count = Mysql.query(f"SELECT COUNT(*) FROM `chats` WHERE id = {userinfo['chat_id']} AND `notify`=1")['COUNT(*)']
             if(count != 1):
-                Methods.mysql_query(f"UPDATE `chats` SET `notify`=1 WHERE `id`='{userinfo['chat_id']}'")
+                Mysql.query(f"UPDATE `chats` SET `notify`=1 WHERE `id`='{userinfo['chat_id']}'")
                 Methods.send(userinfo['chat_id'],"Вы подписали беседу на рассылку обновлений расписания.\nДля рассылки лично вам напишите боту в ЛС.")
             else:
-                Methods.mysql_query(f"UPDATE `chats` SET `notify`=0 WHERE `id`='{userinfo['chat_id']}'")
+                Mysql.query(f"UPDATE `chats` SET `notify`=0 WHERE `id`='{userinfo['chat_id']}'")
                 Methods.send(userinfo['chat_id'],"Вы отписали беседу от рассылки обновлений расписания.\nДля рассылки лично вам напишите боту в ЛС.")
 
     def help(userinfo, text):
