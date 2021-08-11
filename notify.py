@@ -3,14 +3,43 @@ from config import twitch_api, client_id, secret, discord
 from hmac import new as hmac
 from hashlib import sha256
 from methods import Methods
-from flask import Flask, request, abort
+from flask import Flask, request, abort, render_template, url_for, redirect, flash
 from webhook import twitch_api_auth
 import subprocess, datetime, os, requests
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-app = Flask(__name__)
+app = Flask(__name__,
+        template_folder="web/templates/",
+        static_folder="web/static/")
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.config['JSON_SORT_KEYS'] = False
+
+@app.errorhandler(403)
+def err403(e):
+    return (render_template('error.html', code=403,
+        description="Доступ запрещён",
+        full_description="У Вас нет прав доступа к этому объекту. \
+        Файл недоступен для чтения, или сервер не может его прочитать."), 403)
+
+@app.errorhandler(404)
+def err404(e):
+    return (render_template('error.html', code=404,
+        description="Страница не найдена",
+        full_description="Страница которую вы запросили не может быть найдена.\
+        Возможна она была удалена или перемещена."), 404)
+
+@app.errorhandler(405)
+def err405(e):
+    return (render_template('error.html', code=405,
+        description="Method not allowed",
+        full_description="That method is not allowed for the requested URL."), 405)
+
+@app.errorhandler(500)
+def err500(e):
+    return (render_template('error.html', code=500,
+        description="Ошибка сервера",
+        full_description="Во время обработки вашего запроса произошла ошибка. \
+        Попробуйте позже или свяжитесь с разработчиком."), 500)
 
 @app.route("/notify", methods=['POST'])
 def notify():
@@ -57,7 +86,7 @@ def oauth():
         return abort(503)
     check = Methods.mysql_query("SELECT id FROM webhooks WHERE guild = %s", (guild))
     if(check is not None):
-        return {'status':'fail', 'description':'Для этого сервера уже добавлен вебхук', "check_webhook": f"https://d0m1tori.ezdn.ru/notify/oauth/check_{guild}"}, 400
+        return {'status':'fail', 'description':'Для этого сервера уже добавлен вебхук', "check_webhook": "https://"+request.host+url_for("oauth_check", id_=guild)}, 400
     data = {
         'client_id': discord['client_id'],
         'client_secret': discord['client_secret'],
@@ -86,10 +115,14 @@ def oauth_check(id_):
         elif(r['code'] == 50027):
             Methods.mysql_query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
             return {"status":"ok", "description":"Вебхук был удалён с сервера. Запись удалена из БД"}
-        else: return {"status":"warning", "description":f"Получен неизвестный код {r['code']}. Никаких действий не выполнено, обратитесь к разработчику"}
+        else: return {"status":"warning", "description":f"Получен неизвестный код {r['code']}. Никаких действий не выполнено, обратитесь к разработчику", "response":r}
     else:
-        return {"status":"ok", "description":"Похоже, что все в порядке."}
+        r['token'] = None
+        return {"status":"ok", "description":"Похоже, что все в порядке.", "response":r}
 
+# @app.route('/admin')
+# def admin():
+#     return render_template('admin.html')
 
 if(__name__ == '__main__'):
     # app.run('127.0.0.254', port=5008, debug=True)
