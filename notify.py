@@ -62,13 +62,13 @@ def notify():
         return data['challenge'], 200
     check = Mysql.query("SELECT id FROM notify_ids WHERE id=%s", (id_))
     if(check != None):
-        return abort(200)
+        return '', 204
     Mysql.query("INSERT INTO notify_ids (`id`) VALUES (%s)", (id_))
     if(data['subscription']['status'] != "enabled"):
         Methods.send(331465308, f"Warning! Action required.\nTwitch notify status is '{data['subscription']['status']}'")
-        return abort(200)
+        return '', 204
     subprocess.Popen(f"python3 {dir_path}/send.py {data['event']['broadcaster_user_id']}", shell=True)
-    return abort(202)
+    return '', 202
 
 @app.route('/notify/oauth')
 def oauth():
