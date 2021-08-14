@@ -4,6 +4,7 @@ from config import twitch_api, callback, client_id, secret
 from methods import Methods
 
 def twitch_api_auth():
+    Mysql = Methods.Mysql()
     now = datetime.datetime.now().timestamp()
     auth = Mysql.query("SELECT * FROM twitch_api_keys WHERE `not-after`>%s LIMIT 1", (now))
     headers = {
@@ -29,6 +30,7 @@ def twitch_api_auth():
             'Client-ID': auth['client_id'],
             })
     headers.update({'Content-Type': "application/json"})
+    Mysql.close()
     return headers
 if(__name__ == "__main__"):
     import sys
@@ -40,7 +42,6 @@ if(__name__ == "__main__"):
     if(action not in ['add','delete','list']): 
         print('./webhook.py <add|delete|list>')
         exit() 
-    Mysql = Methods.Mysql()
     if(action == 'delete'):
         try:
             id_ = sys.argv[2]
@@ -77,4 +78,3 @@ if(__name__ == "__main__"):
     elif(action == 'list'):
         headers = twitch_api_auth()
         print(requests.get("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers).json())
-    Mysql.close()

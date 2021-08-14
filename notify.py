@@ -63,11 +63,11 @@ def notify():
     check = Mysql.query("SELECT id FROM notify_ids WHERE id=%s", (id_))
     if(check != None):
         return '', 204
-    Mysql.query("INSERT INTO notify_ids (`id`) VALUES (%s)", (id_))
     if(data['subscription']['status'] != "enabled"):
         Methods.send(331465308, f"Warning! Action required.\nTwitch notify status is '{data['subscription']['status']}'")
         return '', 204
     subprocess.Popen(f"python3 {dir_path}/send.py {data['event']['broadcaster_user_id']}", shell=True)
+    Mysql.query("INSERT INTO notify_ids (`id`) VALUES (%s)", (id_))
     return '', 202
 
 @app.route('/notify/oauth')

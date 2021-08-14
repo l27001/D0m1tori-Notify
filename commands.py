@@ -171,12 +171,8 @@ class Commands:
             Methods.send(userinfo['chat_id'], txt)
 
     def dsbot(userinfo, text):
-        """Уведомления о стримах на серверах дискорд"""
+        """Уведомления о трансляциях на ваш сервер дискорд"""
         Methods.send(userinfo['chat_id'], "https://d0m1tori.ezdn.ru/ds-notify/add")
-
-    def ds(userinfo, text):
-        """Инвайт в дискорд"""
-        Methods.send(userinfo['chat_id'], "https://discord.gg/RxQVQPwKx9")
 
 cmds = {'info':Commands.info, 'инфо':Commands.info, 
 'test':Commands.test, 'тест':Commands.test, 
@@ -184,6 +180,5 @@ cmds = {'info':Commands.info, 'инфо':Commands.info,
 'help':Commands.help, 'помощь':Commands.help, 
 'akey':Commands.clrkeyb,
 'status':Commands.status, 'статус':Commands.status,
-'дсбот':Commands.dsbot, 'dsbot':Commands.dsbot,
-'дс':Commands.ds, 'ds':Commands.ds
+'дсбот':Commands.dsbot, 'dsbot':Commands.dsbot
 }
