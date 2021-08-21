@@ -1,0 +1,59 @@
+{% extends 'content/base.html' %}
+{% block content %}
+<!-- Header -->
+					<header id="header" style="width: 30rem;">
+						<div class="content">
+							<div class="inner">
+								<h1>D0m1tori Notify</h1>
+								<p>Бот созданный для служения стримеру.</p>
+							</div>
+						</div>
+						<article style="height: inherit;width: inherit;">
+								<center><h2 style="margin-top: 15px;" class="major">Авторизация</h2></center>
+								<b><a onclick="VK.Auth.login(vk_auth); return false;" class="button1" href="javascript:void()">Авторизоваться через ВК<br></a>
+							</article>
+					</header>
+
+{% endblock %} 
+{% block extrajs %}
+<script src="https://vk.com/js/api/openapi.js" type="text/javascript"></script>
+<script type="text/javascript">
+  VK.init({
+    apiId: {{vk_auth_id}}
+  });
+
+  function vk_auth(response) {
+		if(response.session) {
+		$.ajax({
+	    	url: "{{url_for('vk_auth')}}",
+	    	dataType: "json",
+	    	async: false,
+	    	data: {id: response['session']['user']['id'], expire: response['session']['expire'], mid: response['session']['mid'], secret: response['session']['secret'], sid: response['session']['sid'], sig: response['session']['sig']},
+	    	type: "POST",
+	    	success: function (data) {
+					if(data['status'] == 'success') {
+						toastr.success(data['description']);
+						setTimeout("location.reload()", 2000);
+				}
+				else if(data['status'] == 'unauthorized') {
+					toastr.error(data['description']);
+					setTimeout("location.href = '/auth'", 2000);
+				}
+				else if(data['status'] == 'warning') {
+					toastr.warning(data['description']);
+				}
+				else {
+					toastr.error(data['description']);
+				}
+		    },
+		    beforeRequest: function(data) {
+		    	toastr.info("Операция выполняется...");
+		    }
+		});
+	} else {
+		toastr.warning("No session in response");
+	}
+}
+</script>
+
+{% endblock %}

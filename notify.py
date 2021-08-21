@@ -1,18 +1,74 @@
 #!/usr/bin/python3
-from config import twitch_api, client_id, secret, discord
+from config import twitch_api, client_id, secret, discord, vk_app
 from hmac import new as hmac
 from hashlib import sha256
 from methods import Methods
-from flask import Flask, request, abort, render_template, url_for, redirect, flash
+from flask import Flask, request, abort, render_template, url_for, redirect, flash, g, session
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from webhook import twitch_api_auth
-import subprocess, datetime, os, requests
+import subprocess, datetime, os, requests, hashlib
+import send
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 app = Flask(__name__,
         template_folder="web/templates/",
-        static_folder="web/static/")
+        static_folder="web/assets/")
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.config['JSON_SORT_KEYS'] = False
+app.config['CSRF_ENABLED'] = True
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SECRET_KEY'] = "ZXd1yoMX_8$nkDD+w^H!8qC+yt8N$YMQl-sIrMuQ0w-c3ciUsRqH52HCfVt3S^!f"
+
+lm = LoginManager()
+lm.init_app(app)
+lm.login_view = 'auth'
+
+def subp(cmd, shell=False):
+    if(shell):
+        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    else:
+        proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+    proc.wait()
+    return proc.communicate()[0].decode()[:-1]
+
+class User():
+    def __init__(self, user):
+        if(user == None or user['dostup'] < 2):
+            self.is_authenticated = False
+            self.is_active = False
+            self.is_anonymous = False
+            self.id = -1
+        else:
+            self.is_authenticated = True
+            self.is_active = True
+            self.is_anonymous = False
+            self.id = user['vkid']
+            self.dostup = user['dostup']
+            self.info = user
+
+    def get_id(self):
+        return self.id
+
+@lm.unauthorized_handler
+def unauthorized():
+    if(request.method == "GET"):
+        return redirect(url_for('auth'))
+    else:
+        return {"status":"unauthorized", "desc":"Необходимо авторизоваться"}
+
+@app.before_request
+def before_request():
+    if(request.path.startswith('/assets/')):
+        return None
+    g.user = current_user
+    if(g.user is not None and g.user.is_authenticated == True):
+        if(Mysql.query("SELECT vkid FROM users WHERE vkid = %s AND dostup >= 2", (g.user.id)) is None):
+            logout_user()
+            return redirect(url_for('auth'))
+
+@lm.user_loader
+def load_user(user_id):
+    return User(Mysql.query("SELECT * FROM users WHERE vkid=%s LIMIT 1", (user_id)))
 
 @app.errorhandler(403)
 def err403(e):
@@ -120,9 +176,75 @@ def oauth_check(id_):
         r['token'] = None
         return {"status":"ok", "description":"Похоже, что все в порядке.", "response":r}
 
-# @app.route('/admin')
-# def admin():
-#     return render_template('admin.html')
+@app.route('/admin', methods=['GET'])
+@login_required
+def admin():
+    status = {'bot':subp("systemctl is-failed d0m1tori"), 'notify':subp("systemctl is-failed d0m1tori-notify")}
+    count = {'vk':Mysql.query("SELECT COUNT(*) FROM users WHERE notify = 1")['COUNT(*)'], 'vk_chats':Mysql.query("SELECT COUNT(*) FROM chats WHERE notify = 1")['COUNT(*)'], 'ds':Mysql.query("SELECT COUNT(*) FROM webhooks WHERE enabled = 1")['COUNT(*)']}
+    return render_template('index.html', user=g.user, title="Панель управления", status=status, count=count)
+
+@app.route('/auth', methods=['GET'])
+def auth():
+    if(g.user is not None and g.user.is_authenticated == True):
+        return redirect(url_for('admin'))
+    return render_template('auth.html', title="Авторизация", vk_auth_id=vk_app['id'])
+
+@app.route('/auth/vk', methods=['POST'])
+def vk_auth():
+    id_ = request.form.get('id')
+    expire = request.form.get('expire')
+    mid = request.form.get('mid')
+    secret = request.form.get('secret')
+    sid = request.form.get('sid')
+    sig = request.form.get('sig')
+    if(id_ is None or expire is None or mid is None or secret is None or sid is None or sig is None): return {"status":"fail"}, 400
+    if(hashlib.md5(f"expire={expire}mid={mid}secret={secret}sid={sid}{vk_app['secret']}".encode()).hexdigest() != sig): return {"status":"fail","desc":"sig verify failed"}, 400
+    res = Mysql.query("SELECT vkid,dostup FROM users WHERE vkid=%s", (id_))
+    if(res == None):
+        return {"status":"fail", "desc":"С этим ВКонтакте не связан ни один аккаунт."}
+    elif(res['dostup'] < 2):
+        return {"status":"fail", "desc":"Ваш уровень доступа слишком низок."}
+    # mysql_query("INSERT INTO `web_log` (`user`,`ip`,`date`,`country`,`city`,`type`) VALUES (%s,%s,%s,%s,%s,%s)", (res['id'], request.headers['X-Real-IP'], datetime.now().strftime("%H:%M:%S %d.%m.%Y"), request.headers['X-GEOIP2-COUNTRY_NAME'], request.headers['X-GEOIP2-CITY-NAME'], 1))
+    login_user(load_user(res['vkid']), remember=True)
+    return {"status":"success", "desc":"Вы успешно авторизовались!"}
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('auth'))
+
+@app.route('/admin/send', methods=['POST'])
+@login_required
+def send_():
+    action = request.form.get('action')
+    if(action is None): return abort(400)
+    if(action == "force"):
+        data = send.check_stream(discord['streamer_id'])
+        if('error' in data):
+            return {"status":"warning", "description":"Сейчас трансляция не ведётся"}
+        subp(f"{dir_path}/send.py {discord['streamer_id']}", shell=True)
+        return {"status":"success", "description":"Рассылка запущена"}
+    elif(action == "custom"):
+        text = request.form.get('text')
+        ds = request.form.get('ds')
+        vk = request.form.get('vk')
+        post_vk = request.form.get('post_vk')
+        if(text is None or ds is None or vk is None): return abort(400)
+        a = {'true':1,'false':0};ds = a[ds]; vk = a[vk]; post_vk = a[post_vk]
+        text = text.strip()
+        if(text == ''): return {"status":"warning", "description":"Сообщение не может быть пустым"}
+        if(ds == 0 and vk == 0 and post_vk == 0): return {"status":"warning", "description":"Выберите как минимум один способ рассылки"}
+        if(len(text) > 1000): return {"status":"warning", "description":"Размер сообщения не может быть больше 1000 символов"}
+        if(vk == 1 and post_vk == 1):
+            send.send_vk(None, text, '', True, True)
+        elif(vk == 0 and post_vk == 1):
+            send.send_vk(None, text, '', True, False)
+        elif(vk == 1 and post_vk == 0):
+            send.send_vk(None, text, '', False, True)
+        if(ds):
+            send.send_ds('', text, '', True)
+        return {"status":"success", "description":"Рассылка успешно проведена"}
 
 if(__name__ == '__main__'):
     Mysql = Methods.Mysql()

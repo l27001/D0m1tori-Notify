@@ -1,0 +1,130 @@
+{% extends 'content/base.html' %}
+{% block content %}
+<!-- Header -->
+					<header id="header">
+						<div class="logo">
+							<span class="icon fa-server"></span>
+						</div>
+						<div class="content">
+							<div class="inner">
+								<h1>D0m1tori Notify</h1>
+								<p>Бот созданный для служения стримеру.</p>
+								<p>Уровень доступа: {% if user.dostup == 2 %}Администратор{% else %}Unknown{% endif %}.</p>
+							</div>
+						</div>
+						<nav>
+							<ul>
+								<li><a href="#status">Статус</a></li>
+								<li><a href="#custom">Рассылка</a></li>
+								<li><a href="{{url_for('logout')}}">Выход</a></li>
+							</ul>
+						</nav>
+					</header>
+
+				<!-- Main -->
+					<div id="main">
+
+							<article id="status">							
+								<center><h2 class="major">Статус бота</h2>
+								<p>Бот: {%if status['bot'] == 'active'%}<span style="color:green;">Активен{%elif status['bot'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
+								Twitch WebHook: {%if status['notify'] == 'active'%}<span style="color:green;">Активен{%elif status['notify'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
+								Подписано в ВК: {{count['vk']}} пользователя(ей) и {{count['vk_chats']}} бесед(ы)<br>
+								Подписано в ДС: {{count['ds']}} сервера(ов)</p>
+								<button onclick="send();" class="button1">Принудительная рассылка</button></center>
+							</article>
+
+						<!-- Donate -->
+							<article id="custom">
+								<center><h2 class="major">Рассылка</h2></center>
+                                <div class="toggle-content text-center" id="tab2">
+                                    <form><center>
+									<div>
+									<textarea id='ctext' placeholder='Текст рассылки' reqiured></textarea>
+									</div>
+									<br>
+									<div>
+									<label class="checkbox-google">
+										<input id="cvk" type="checkbox" checked>
+										<span class="checkbox-google-switch"></span>
+										Отправить в ЛС ВК
+									</label><br>
+									<label class="checkbox-google">
+										<input id="vk_post" type="checkbox" checked>
+										<span class="checkbox-google-switch"></span>
+										Создать пост ВК
+									</label><br>
+									<label class="checkbox-google">
+										<input id="ds" type="checkbox" checked>
+										<span class="checkbox-google-switch"></span>
+										Отправить по серверам ДС
+									</label>
+									</div>
+									<div>
+									<br>
+									<input onclick="send_custom(document.getElementById('ctext').value, document.getElementById('cvk').checked, document.getElementById('vk_post').checked, document.getElementById('ds').checked); return false;" class="orange_button" type="submit" value="Отправить">
+									</div></center> 
+									</form>
+                                </div>
+							</article>
+					</div>
+{% endblock %}
+{% block extrajs %}
+<script type="text/javascript">
+	function send() {
+		$.ajax({
+	    	url: "{{url_for('send_')}}",
+	    	dataType: "json",
+	    	async: false,
+	    	data: {action: "force"},
+	    	type: "POST",
+	    	success: function (data) {
+				if(data['status'] == 'success') {
+					toastr.success(data['description']);
+				}
+				else if(data['status'] == 'unauthorized') {
+					toastr.error(data['description']);
+					setTimeout("location.href = '/auth'", 2000);
+				}
+				else if(data['status'] == 'warning') {
+					toastr.warning(data['description']);
+				}
+				else {
+					toastr.error(data['description']);
+				}
+		    },
+		    beforeRequest: function(data) {
+		    	toastr.info("Операция выполняется...");
+		    }
+		});
+	}
+</script>
+<script type="text/javascript">
+	function send_custom(text, vk, post_vk, ds) {
+		$.ajax({
+	    	url: "{{url_for('send_')}}",
+	    	dataType: "json",
+	    	async: false,
+	    	data: {action: "custom", text:text, vk:vk, post_vk:post_vk, ds:ds},
+	    	type: "POST",
+	    	success: function (data) {
+				if(data['status'] == 'success') {
+					toastr.success(data['description']);
+				}
+				else if(data['status'] == 'unauthorized') {
+					toastr.error(data['description']);
+					setTimeout("location.href = '/auth'", 2000);
+				}
+				else if(data['status'] == 'warning') {
+					toastr.warning(data['description']);
+				}
+				else {
+					toastr.error(data['description']);
+				}
+		    },
+		    beforeRequest: function(data) {
+		    	toastr.info("Операция выполняется...");
+		    }
+		});
+	}
+</script>
+{% endblock %}

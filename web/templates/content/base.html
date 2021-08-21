@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript">
+	function noselect() {return false;}
+	 
+	function addHandler(event, handler){
+	 if (document.attachEvent) {
+	 document.attachEvent('on' + event, handler);
+	 }
+	 else if (document.addEventListener) {
+	 document.addEventListener(event, handler, false);
+	 }
+	 }
+	 
+	function killSelection(){
+	 if (window.getSelection) {
+	 window.getSelection().removeAllRanges();
+	 }
+	 else if (document.selection && document.selection.clear) {
+	 document.selection.clear();
+	 }
+	 }
+	 
+	function noSelectionEvent(event) {
+	 var event = event || window.event;
+	 
+	 var key = event.keyCode || event.which;
+	if (event.ctrlKey && (key == 65 || key == 85)) {
+	 killSelection();
+	if (event.preventDefault) { event.preventDefault(); }
+	 else { event.returnValue = false; }
+	 return false;
+	 }
+	 }
+	 
+	addHandler('keydown', noSelectionEvent);
+	addHandler('keyup', noSelectionEvent);
+</script>
+
+		<title>D0m1tori Notify{% if title %} | {{title}}{% endif %}</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="/assets/css/main.css" />
+		<!--[if lte IE 9]><link rel="stylesheet" href="assets/css/ie9.css" /><![endif]-->
+		<noscript><link rel="stylesheet" href="/assets/css/noscript.css" /></noscript>
+		<link rel="stylesheet" href="/assets/css/toastr.min.css">
+	</head>
+	<body style="font-weight: bold;">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				{% block content %}{% endblock %}
+
+				<!-- Footer -->
+					<footer id="footer">
+						<p class="copyright">&copy; <script>document.write(new Date().getFullYear())</script> D0m1tori-Notify Сделано с ❤️</p>
+					</footer>
+
+			</div>
+
+		<!-- BG -->
+			<div id="bg"></div>
+
+		<!-- Scripts -->
+			<script src="/assets/js/jquery.min.js"></script>
+			<script src="/assets/js/skel.min.js"></script>
+			<script src="/assets/js/util.js"></script>
+			<script src="/assets/js/main.js"></script>
+			<script src="/assets/js/toastr.min.js"></script>
+			{% block extrajs %}{% endblock %}
+
+	</body>
+</html>
