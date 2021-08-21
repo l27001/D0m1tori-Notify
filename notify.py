@@ -54,7 +54,7 @@ def unauthorized():
     if(request.method == "GET"):
         return redirect(url_for('auth'))
     else:
-        return {"status":"unauthorized", "desc":"Необходимо авторизоваться"}
+        return {"status":"unauthorized", "description":"Необходимо авторизоваться"}
 
 @app.before_request
 def before_request():
@@ -132,7 +132,7 @@ def oauth():
         error = request.args.get('error').strip()
         description = request.args.get('error_description').strip()
         if(error):
-            return {"status":"fail", "error":error, "description":description}, 400
+            return render_template('message.html', title="Информация", status="fail", msg=description), 400
     except AttributeError: pass
     try:
         code = request.args.get('code').strip()
@@ -142,7 +142,7 @@ def oauth():
         return abort(503)
     check = Mysql.query("SELECT id FROM webhooks WHERE guild = %s", (guild))
     if(check is not None):
-        return {'status':'fail', 'description':'Для этого сервера уже добавлен вебхук', "check_webhook": "https://"+request.host+url_for("oauth_check", id_=guild)}, 400
+        return render_template('message.html', title="Информация", status="info", msg='Для этого сервера уже добавлен вебхук', buttons=[{'link':"https://"+request.host+url_for("oauth_check", id_=guild), 'text':'Проверить вебхук'}])
     data = {
         'client_id': discord['client_id'],
         'client_secret': discord['client_secret'],
@@ -155,26 +155,26 @@ def oauth():
         return abort(400)
     r = r.json()
     Mysql.query("INSERT INTO webhooks (`link`, `guild`) VALUES (%s, %s)", (r['webhook']['url'], guild))
-    return {'status':"ok"}, 202
+    return render_template('message.html', title="Информация", status="success", msg="Вебхук успешно добавлен"), 202
 
 @app.route('/notify/oauth/check_<int:id_>')
 def oauth_check(id_):
     if(id_ <= 0): return abort(400)
     webhook = Mysql.query("SELECT id,link FROM webhooks WHERE guild = %s", (id_))
-    if(webhook is None): return {"status":"fail", "description":"Сервер с таким ID не найден в БД"}, 400
+    if(webhook is None): return render_template('message.html', title="Информация", status="fail", msg="Сервер с таким ID не найден в БД"), 400
     r = requests.get(webhook['link'])
     r = r.json()
     if('code' in r):
         if(r['code'] == 10015):
             Mysql.query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
-            return {"status":"ok", "description":"Интеграция была удалёна с сервера. Запись удалена из БД"}
+            return render_template('message.html', title="Информация", status="info", msg="Интеграция была удалёна с сервера. Запись удалена из БД")
         elif(r['code'] == 50027):
             Mysql.query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
-            return {"status":"ok", "description":"Вебхук был удалён с сервера. Запись удалена из БД"}
-        else: return {"status":"warning", "description":f"Получен неизвестный код {r['code']}. Никаких действий не выполнено, обратитесь к разработчику", "response":r}
+            return render_template('message.html', title="Информация", status="info", msg="Вебхук был удалён с сервера. Запись удалена из БД")
+        else: return render_template('message.html', title="Информация", status="info", msg=f"Получен неизвестный код {r['code']}. Никаких действий не выполнено, обратитесь к разработчику")
     else:
         r['token'] = None
-        return {"status":"ok", "description":"Похоже, что все в порядке.", "response":r}
+        return render_template('message.html', status="success", msg="Похоже, что все в порядке.", title="Информация")
 
 @app.route('/admin', methods=['GET'])
 @login_required
@@ -198,15 +198,15 @@ def vk_auth():
     sid = request.form.get('sid')
     sig = request.form.get('sig')
     if(id_ is None or expire is None or mid is None or secret is None or sid is None or sig is None): return {"status":"fail"}, 400
-    if(hashlib.md5(f"expire={expire}mid={mid}secret={secret}sid={sid}{vk_app['secret']}".encode()).hexdigest() != sig): return {"status":"fail","desc":"sig verify failed"}, 400
+    if(hashlib.md5(f"expire={expire}mid={mid}secret={secret}sid={sid}{vk_app['secret']}".encode()).hexdigest() != sig): return {"status":"fail","description":"sig verify failed"}, 400
     res = Mysql.query("SELECT vkid,dostup FROM users WHERE vkid=%s", (id_))
     if(res == None):
-        return {"status":"fail", "desc":"С этим ВКонтакте не связан ни один аккаунт."}
+        return {"status":"fail", "description":"Этого аккаунта нет в базе."}
     elif(res['dostup'] < 2):
-        return {"status":"fail", "desc":"Ваш уровень доступа слишком низок."}
+        return {"status":"fail", "description":"Ваш уровень доступа слишком низок."}
     # mysql_query("INSERT INTO `web_log` (`user`,`ip`,`date`,`country`,`city`,`type`) VALUES (%s,%s,%s,%s,%s,%s)", (res['id'], request.headers['X-Real-IP'], datetime.now().strftime("%H:%M:%S %d.%m.%Y"), request.headers['X-GEOIP2-COUNTRY_NAME'], request.headers['X-GEOIP2-CITY-NAME'], 1))
     login_user(load_user(res['vkid']), remember=True)
-    return {"status":"success", "desc":"Вы успешно авторизовались!"}
+    return {"status":"success", "description":"Вы успешно авторизовались!"}
 
 @app.route('/logout')
 @login_required

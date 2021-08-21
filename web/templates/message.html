@@ -1,0 +1,23 @@
+{% extends 'content/base.html' %}
+{% block content %}
+<!-- Header -->
+					<header id="header" style="width: 30rem;">
+						<div class="content">
+							<div class="inner">
+								<h1>D0m1tori Notify</h1>
+								<p>Бот созданный для служения стримеру.</p>
+							</div>
+						</div>
+						<article style="height: inherit;width: inherit;">
+								<center><h2 style="margin-top: 15px;" class="major">Информация</h2></center>
+								<p>Статус: {% if status == 'success' %}<span style="color:green;">success{% elif status == 'fail' %}<span style="color:red;">fail{% elif status == 'info' %}<span style="color:cyan;">info{% elif status == 'warning' %}<span style="color:orange;">warning{% else %}<span style="color:gray;">unknown{% endif %}</span><br>
+								{{msg}}</p>
+								{% if buttons %}
+								{% for n in buttons %}
+								<a class="button1" href="{{n['link']}}">{{n['text']}}<br></a>
+								{% endfor %}
+								{% endif %}
+							</article>
+					</header>
+
+{% endblock %}  
