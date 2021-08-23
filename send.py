@@ -16,7 +16,6 @@ def check_stream(id_):
     streamer = requests.get("https://api.twitch.tv/helix/channels", params={'broadcaster_id': id_}, headers=headers).json()['data'][0]
     # Can use: info['title'], info['game_name'], info['user_name'], info['thumbnail_url'], info['started_at'], info['viewer_count']
     img = info['thumbnail_url'][:info['thumbnail_url'].find('{')-1] + info['thumbnail_url'][info['thumbnail_url'].rfind('}')+1:]
-    print(info)
     img_name = f"{dir_path}/preview.{img.split('.')[-1]}"
     Methods.download_img(img, img_name)
     txt = f"Стрим начался, бегом смотреть!\n{info['game_name']} | {info['title']}\n"
@@ -138,4 +137,4 @@ if(__name__ == "__main__"):
         exit()
     send_vk(data['img_local'], data['txt'], data['link'])
     send_ds(data['img_link'], data['txt'], data['link'])
-    os.remove(img_name)
+    os.remove(data['img_local'])
