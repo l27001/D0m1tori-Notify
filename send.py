@@ -90,7 +90,7 @@ def send_ds(img, txt, link, custom=False):
               "description": f"**{txt}**",
               "author": {},
               "image": {
-                "url": img
+                "url": "https://sun9-53.userapi.com/impf/1uHpklViePFHUn5_E-1PEs4tNaSNBdRS_3rODQ/4pV95Pk1SLo.jpg?size=795x265&quality=95&crop=0,293,2560,853&sign=9f822057e7165f00bb3d67ffbbcfb645&type=cover_group"#img
               },
               "thumbnail": {},
               "footer": {"text": now},
