@@ -203,9 +203,11 @@ def vk_auth():
     if(res == None):
         return {"status":"fail", "description":"Этого аккаунта нет в базе."}
     elif(res['dostup'] < 2):
+        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Неудачный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"fail", "description":"Ваш уровень доступа слишком низок."}
     # mysql_query("INSERT INTO `web_log` (`user`,`ip`,`date`,`country`,`city`,`type`) VALUES (%s,%s,%s,%s,%s,%s)", (res['id'], request.headers['X-Real-IP'], datetime.now().strftime("%H:%M:%S %d.%m.%Y"), request.headers['X-GEOIP2-COUNTRY_NAME'], request.headers['X-GEOIP2-CITY-NAME'], 1))
     login_user(load_user(res['vkid']), remember=True)
+    Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Успешный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
     return {"status":"success", "description":"Вы успешно авторизовались!"}
 
 @app.route('/logout')
@@ -224,6 +226,7 @@ def send_():
         if('error' in data):
             return {"status":"warning", "description":"Сейчас трансляция не ведётся"}
         subp(f"{dir_path}/send.py {discord['streamer_id']}", shell=True)
+        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],"Запущена обычная рассылка", 'stream_send',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка запущена"}
     elif(action == "custom"):
         text = request.form.get('text')
@@ -242,8 +245,9 @@ def send_():
             send.send_vk(None, text, '', True, False)
         elif(vk == 1 and post_vk == 0):
             send.send_vk(None, text, '', False, True)
-        if(ds):
+        if(ds == 1):
             send.send_ds('', text, '', True)
+        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка успешно проведена"}
 
 if(__name__ == '__main__'):
