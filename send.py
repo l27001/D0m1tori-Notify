@@ -123,7 +123,7 @@ def send_ds(img, txt, link, custom=False):
                 rdata = r.json()
                 if('code' in rdata and rdata['code'] == 10015):
                     Mysql.query("DELETE FROM webhooks WHERE id = %s", (guild['id']))
-                else:
+                elif('code' in rdata):
                     print(rdata)
         except:
             Methods.send(331465308, f"send.py: fail discord.send\n{e}")
