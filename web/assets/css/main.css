@@ -1,5 +1,6 @@
 @import url(font-awesome.min.css);
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300italic,600italic,300,600");
+@import url("https://ezdomain.ru/css/fonts.css");
 
 /*
 	Dimension by Sergo663
@@ -120,8 +121,8 @@
 
 	body, input, select, textarea {
 		color: #ffffff;
-		font-family: "Source Sans Pro", sans-serif;
-		font-weight: 300;
+		font-family: "Cascadia-Code", sans-serif;
+		font-weight: normal;
 		font-size: 1rem;
 		line-height: 1.65;
 	}

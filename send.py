@@ -2,7 +2,7 @@
 import requests, sys, time, random, os, json
 from datetime import datetime
 from webhook import twitch_api_auth
-from config import groupid, user_token
+from config import vk_info, user_token
 from methods import Methods
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -33,7 +33,7 @@ def send_vk(img_name, txt, link='', post=True, rass=True):
             response = requests.get("https://api.vk.com/method/wall.post",
                 params={'access_token': user_token,
                         'v': '5.131',
-                        'owner_id': f"-{groupid}",
+                        'owner_id': f"-{vk_info['groupid']}",
                         'from_group': 1,
                         'attachments': link,
                         'message': txt+link

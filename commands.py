@@ -1,7 +1,6 @@
 import datetime, re, timeit, json, requests
-from config import groupid
+from config import vk_info
 from methods import Methods
-from other import dir_path
 from webhook import twitch_api_auth
 
 class Commands:
@@ -55,7 +54,7 @@ class Commands:
             except TypeError: pass
             userinfo.update({'payload':obj['payload']})
         text = text.split(' ')
-        if(re.match(rf"\[(club|public){groupid}\|(@|\*){scrname}\]", text[0])):
+        if(re.match(rf"\[(club|public){vk_info['groupid']}\|(@|\*){scrname}\]", text[0])):
             text.pop(0)
         if(text[0][0] != '/'):
             return None
@@ -117,7 +116,7 @@ class Commands:
 
     def test(userinfo, text):
         """"""
-        Methods.send(userinfo['chat_id'], f"{scrname} Bot by @l27001\nОбработано команд: {acmds}\nОшибок при выполнении команд: {aerrs}\nDebug: {DEBUG}\nЗапущен: {timestart.strftime('%Y-%m-%d %H:%M:%S')}\nВремя работы: {datetime.datetime.now()-timestart}", disable_mentions=1)
+        Methods.send(userinfo['chat_id'], f"{scrname} Bot by @l27001\nDebug: {DEBUG}", disable_mentions=1)
 
     def clrkeyb(userinfo, text):
         """"""

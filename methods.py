@@ -1,6 +1,5 @@
 import re, requests, datetime, os, random, timeit, pymysql, pymysql.cursors
 from pymysql.err import InterfaceError, OperationalError
-from other import api, dir_path
 import config
 
 headers = {
@@ -118,13 +117,13 @@ class Methods:
 
     def is_message_allowed(id_):
         try:
-            return api.messages.isMessagesFromGroupAllowed(user_id=id_,group_id=config.groupid)['is_allowed']
+            return api.messages.isMessagesFromGroupAllowed(user_id=id_,group_id=config.vk_info['groupid'])['is_allowed']
         except:
-            return api.messages.isMessagesFromGroupAllowed(user_id=id_,group_id=config.groupid)['is_allowed']
+            return api.messages.isMessagesFromGroupAllowed(user_id=id_,group_id=config.vk_info['groupid'])['is_allowed']
 
     def get_conversation_members(peer_id):
         try:
-            return api.messages.getConversationMembers(group_id=config.groupid,peer_id=peer_id)['items']
+            return api.messages.getConversationMembers(group_id=config.vk_info['groupid'],peer_id=peer_id)['items']
         except Exception as e:
             if(e.code == 917):
                 return 917
@@ -135,11 +134,11 @@ class Methods:
     def kick_user(chat,name):
         api.messages.removeChatUser(chat_id=chat-2000000000,member_id=name)
 
-    def del_message(message_ids,delete_for_all=1,group_id=config.groupid):
-        return api.messages.delete(message_ids=message_ids,delete_for_all=1,group_id=config.groupid)
+    def del_message(message_ids,delete_for_all=1,group_id=config.vk_info['groupid']):
+        return api.messages.delete(message_ids=message_ids,delete_for_all=1,group_id=config.vk_info['groupid'])
 
-    def set_typing(peer_id,type_='typing',group_id=config.groupid):
-        api.messages.setActivity(group_id=config.groupid,peer_id=peer_id,type=type_)
+    def set_typing(peer_id,type_='typing',group_id=config.vk_info['groupid']):
+        api.messages.setActivity(group_id=config.vk_info['groupid'],peer_id=peer_id,type=type_)
 
     def check_keyboard(inline):
         if(inline):
