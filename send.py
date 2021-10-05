@@ -1,10 +1,13 @@
 #!/usr/bin/python3
-import requests, sys, time, random, os, json
+import requests, sys, time, random, os, json, vk, builtins
 from datetime import datetime
 from webhook import twitch_api_auth
 from config import vk_info, user_token
 from methods import Methods
 dir_path = os.path.dirname(os.path.realpath(__file__))
+
+session = vk.Session(access_token=vk_info['access_token'])
+builtins.api = vk.API(session, v='5.124', lang='ru')
 
 def check_stream(id_):
     headers = twitch_api_auth()

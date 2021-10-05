@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from config import twitch_api, client_id, secret, discord, vk_app
+from config import twitch_api, client_id, secret, discord, vk_app, vk_info
 from hmac import new as hmac
 from hashlib import sha256
 from methods import Methods
@@ -7,7 +7,7 @@ from flask import Flask, request, abort, render_template, url_for, redirect, fla
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from webhook import twitch_api_auth
 import subprocess, datetime, os, requests, hashlib
-import send
+import send, vk, builtins
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 app = Flask(__name__,
@@ -18,6 +18,9 @@ app.config['JSON_SORT_KEYS'] = False
 app.config['CSRF_ENABLED'] = True
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SECRET_KEY'] = "ZXd1yoMX_8$nkDD+w^H!8qC+yt8N$YMQl-sIrMuQ0w-c3ciUsRqH52HCfVt3S^!f"
+
+session = vk.Session(access_token=vk_info['access_token'])
+builtins.api = vk.API(session, v='5.124', lang='ru')
 
 lm = LoginManager()
 lm.init_app(app)
@@ -183,13 +186,13 @@ def admin():
     count = {'vk':Mysql.query("SELECT COUNT(*) FROM users WHERE notify = 1")['COUNT(*)'], 'vk_chats':Mysql.query("SELECT COUNT(*) FROM chats WHERE notify = 1")['COUNT(*)'], 'ds':Mysql.query("SELECT COUNT(*) FROM webhooks WHERE enabled = 1")['COUNT(*)']}
     return render_template('index.html', user=g.user, title="Панель управления", status=status, count=count)
 
-@app.route('/auth', methods=['GET'])
+@app.route('/admin/auth', methods=['GET'])
 def auth():
     if(g.user is not None and g.user.is_authenticated == True):
         return redirect(url_for('admin'))
     return render_template('auth.html', title="Авторизация", vk_auth_id=vk_app['id'])
 
-@app.route('/auth/vk', methods=['POST'])
+@app.route('/admin/auth/vk', methods=['POST'])
 def vk_auth():
     id_ = request.form.get('id')
     expire = request.form.get('expire')
@@ -210,7 +213,7 @@ def vk_auth():
     Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Успешный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
     return {"status":"success", "description":"Вы успешно авторизовались!"}
 
-@app.route('/logout')
+@app.route('/admin/logout')
 @login_required
 def logout():
     logout_user()
@@ -226,7 +229,7 @@ def send_():
         if('error' in data):
             return {"status":"warning", "description":"Сейчас трансляция не ведётся"}
         subp(f"{dir_path}/send.py {discord['streamer_id']}", shell=True)
-        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],"Запущена обычная рассылка", 'stream_send',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
+        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,"Запущена обычная рассылка", 'stream_send',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка запущена"}
     elif(action == "custom"):
         text = request.form.get('text')
@@ -247,7 +250,7 @@ def send_():
             send.send_vk(None, text, '', False, True)
         if(ds == 1):
             send.send_ds('', text, '', True)
-        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
+        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка успешно проведена"}
 
 if(__name__ == '__main__'):
