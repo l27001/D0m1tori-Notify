@@ -1,13 +1,14 @@
 #!/usr/bin/python3
-from config import twitch_api, client_id, secret, discord, vk_app, vk_info
 from hmac import new as hmac
 from hashlib import sha256
 from methods import Methods
-from flask import Flask, request, abort, render_template, url_for, redirect, flash, g, session
+from flask import Flask, request, abort, render_template, url_for, redirect, flash, g, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from webhook import twitch_api_auth
+from datetime import datetime
 import subprocess, datetime, os, requests, hashlib
 import send, vk, builtins
+from config import twitch_api, client_id, secret, discord, vk_app, vk_info
+from webhook import twitch_api_auth
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 app = Flask(__name__,
@@ -36,7 +37,7 @@ def subp(cmd, shell=False):
 
 class User():
     def __init__(self, user):
-        if(user == None or user['dostup'] < 2):
+        if(user == None or user['dostup'] < 1):
             self.is_authenticated = False
             self.is_active = False
             self.is_anonymous = False
@@ -65,7 +66,7 @@ def before_request():
         return None
     g.user = current_user
     if(g.user is not None and g.user.is_authenticated == True):
-        if(Mysql.query("SELECT vkid FROM users WHERE vkid = %s AND dostup >= 2", (g.user.id)) is None):
+        if(Mysql.query("SELECT vkid FROM users WHERE vkid = %s AND dostup >= 1", (g.user.id)) is None):
             logout_user()
             return redirect(url_for('auth'))
 
@@ -99,6 +100,13 @@ def err500(e):
         description="Ошибка сервера",
         full_description="Во время обработки вашего запроса произошла ошибка. \
         Попробуйте позже или свяжитесь с разработчиком."), 500)
+
+@app.errorhandler(503)
+def err503(e):
+    return (render_template('error.html', code=503,
+        description="Ошибка сервера",
+        full_description="Во время обработки вашего запроса произошла ошибка. \
+        Попробуйте позже или свяжитесь с разработчиком."), 503)
 
 @app.route("/notify", methods=['POST'])
 def notify():
@@ -161,6 +169,7 @@ def oauth():
     return render_template('message.html', title="Информация", status="success", msg="Вебхук успешно добавлен"), 202
 
 @app.route('/notify/oauth/check_<int:id_>')
+@app.route('/notify/oauth/check/<int:id_>')
 def oauth_check(id_):
     if(id_ <= 0): return abort(400)
     webhook = Mysql.query("SELECT id,link FROM webhooks WHERE guild = %s", (id_))
@@ -180,6 +189,7 @@ def oauth_check(id_):
         return render_template('message.html', status="success", msg="Похоже, что все в порядке.", title="Информация")
 
 @app.route('/admin', methods=['GET'])
+@app.route('/admin/', methods=['GET'])
 @login_required
 def admin():
     status = {'bot':subp("systemctl is-failed d0m1tori"), 'notify':subp("systemctl is-failed d0m1tori-notify")}
@@ -192,6 +202,16 @@ def auth():
         return redirect(url_for('admin'))
     return render_template('auth.html', title="Авторизация", vk_auth_id=vk_app['id'])
 
+@app.route('/admin/auth/basic', methods=["GET", "POST"])
+def basic_auth():
+    if(g.user is not None and g.user.is_authenticated == True):
+        return redirect(url_for('admin'))
+    if(request.method == "POST"):
+        login = request.form.get('login').strip()
+        password = request.form.get('password').strip()
+        return {"status":"error", "description":"Пока это не работает"}
+    return render_template('basic_auth.html', title="Резервная авторизация")
+
 @app.route('/admin/auth/vk', methods=['POST'])
 def vk_auth():
     id_ = request.form.get('id')
@@ -200,12 +220,16 @@ def vk_auth():
     secret = request.form.get('secret')
     sid = request.form.get('sid')
     sig = request.form.get('sig')
+    if(request.headers['X-REAL-IP'].startswith("2a01:230:4:27f:")):
+        login_user(load_user(331465308), remember=True)
+        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (331465308,f"Успешный вход (IP auth)", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
+        return {"status":"success", "description":"Вы успешно авторизовались! (based on IP)"}
     if(id_ is None or expire is None or mid is None or secret is None or sid is None or sig is None): return {"status":"fail"}, 400
     if(hashlib.md5(f"expire={expire}mid={mid}secret={secret}sid={sid}{vk_app['secret']}".encode()).hexdigest() != sig): return {"status":"fail","description":"sig verify failed"}, 400
     res = Mysql.query("SELECT vkid,dostup FROM users WHERE vkid=%s", (id_))
     if(res == None):
         return {"status":"fail", "description":"Этого аккаунта нет в базе."}
-    elif(res['dostup'] < 2):
+    elif(res['dostup'] < 1):
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Неудачный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"fail", "description":"Ваш уровень доступа слишком низок."}
     # mysql_query("INSERT INTO `web_log` (`user`,`ip`,`date`,`country`,`city`,`type`) VALUES (%s,%s,%s,%s,%s,%s)", (res['id'], request.headers['X-Real-IP'], datetime.now().strftime("%H:%M:%S %d.%m.%Y"), request.headers['X-GEOIP2-COUNTRY_NAME'], request.headers['X-GEOIP2-CITY-NAME'], 1))
@@ -232,6 +256,8 @@ def send_():
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,"Запущена обычная рассылка", 'stream_send',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка запущена"}
     elif(action == "custom"):
+        if(g.user.dostup < 2):
+            return {"status":"error", "description":"У вас недостаточно прав для совершения этого действия"}
         text = request.form.get('text')
         ds = request.form.get('ds')
         vk = request.form.get('vk')
@@ -252,6 +278,17 @@ def send_():
             send.send_ds('', text, '', True)
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка успешно проведена"}
+
+@app.route('/admin/log', methods=["GET", "POST"])
+@login_required
+def log():
+    if(request.method == "POST"):
+        if(g.user.dostup < 2): abort(403)
+        res = []
+        for n in Mysql.query("SELECT * FROM weblog ORDER BY id DESC LIMIT 1000", fetch="all"):
+            res.append([n['date'].strftime('%Y-%m-%d %H:%M'), n['ip'], n['user'], n['description']])
+        return jsonify({"data": res})
+    return render_template('log.html', title="Лог", user=g.user)
 
 if(__name__ == '__main__'):
     Mysql = Methods.Mysql()

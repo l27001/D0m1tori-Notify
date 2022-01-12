@@ -1,0 +1,58 @@
+{% extends 'content/base.html' %}
+{% block content %}
+
+						<!-- Donate -->
+							<article style="position: absolute; padding-bottom: 60px;">
+								<center><h2 class="major">Лог</h2></center>
+                                <div class="toggle-content text-center">
+                                	<div class="sheader">
+										<a class="button1" href="{{url_for('admin')}}">Главная</a>
+										<a class="button1" href="{{url_for('admin')}}#status">Статус</a>
+										<a class="button1" href="{{url_for('admin')}}#custom">Рассылка</a>
+										<a class="button1" href="{{url_for('logout')}}">Выход</a>
+									</div>
+									{% if user.dostup > 1 %}
+                                   <table id="log_table" class="display table">
+									    <thead>
+									        <tr>
+									            <th>Дата</th>
+									            <th>IP</th>
+									            <th>UserID</th>
+									            <th>Log</th>
+									        </tr>
+									    </thead>
+									    <tbody>
+									        <tr>
+									            <td>2021-09-14 21:19:19</td>
+									            <td>0000:0000:0000:0000::::</td>
+									            <td>331465308</td>
+									            <td>Запущена обычная рассылка</td>
+									        </tr>
+									    </tbody>
+									</table> 
+									{% else %}
+									<h2>У вас нет прав для просмотра лога.</h2>
+									{% endif %}
+                                </div>
+							</article>
+					</div>
+{% endblock %}
+{% block extrajs %}
+{% if user.dostup > 1 %}
+<script type="text/javascript" src="https://cdn.datatables.net/v/ju/dt-1.11.3/b-2.1.1/cr-1.5.5/date-1.1.1/r-2.2.9/datatables.js"></script>
+<script>
+	var table = $('#log_table').DataTable({
+		responsive: true,
+		ajax: {
+		 	url: "{{url_for('log')}}",
+			type: "POST"
+		},
+		order: [[0, "desc"]],
+	 	oLanguage: { "sUrl": "/assets/dt_ru.json" }
+	});
+	table.on( 'error.dt', function ( e, settings, techNote, message ) {
+        toastr.error('Не удалось получить данные из БД. Попробуйте обновить страницу.');
+    } );
+</script>
+{% endif %}
+{% endblock %}

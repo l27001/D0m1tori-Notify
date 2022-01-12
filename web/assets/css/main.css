@@ -1807,3 +1807,45 @@
 	background: #eee;
 
 }
+
+#toast-container {
+	font-weight: normal;
+	font-size: 16px;
+}
+
+thead, tr, td {
+	background-color: rgba(0, 0, 0, 0.4) !important;
+	text-align: center;
+	border-right: 1px solid #fff;
+}
+td.dtr-control {
+	border-left: 1px solid #fff;
+}
+
+div.dataTables_info, div.dataTables_paginate {
+	color: #fff !important;
+}
+
+div.dataTables_paginate a, div.dataTables_paginate span {
+	margin: 0 5px;
+	cursor: pointer;
+}
+
+#log_table_filter {
+	margin-top: 24px;
+}
+
+a.ui-state-disabled {
+	cursor: none !important;
+	text-decoration: none;
+	display: none;
+}
+
+div.sheader {
+	text-align: center;
+}
+
+div.sheader a {
+	display: inline-block;
+	max-width: 20%;
+}

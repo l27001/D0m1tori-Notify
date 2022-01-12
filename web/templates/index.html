@@ -8,15 +8,17 @@
 						<div class="content">
 							<div class="inner">
 								<h1>D0m1tori Notify</h1>
-								<p>Бот созданный для служения стримеру.</p>
-								<p>Уровень доступа: {% if user.dostup == 2 %}Администратор{% else %}Unknown{% endif %}.</p>
+								<p>Бот созданный для служения стримеру</p>
+								<p>Уровень доступа: {% if user.dostup == 2 %}Администратор{% elif user.dostup == 1 %}Модератор{% else %}Unknown{% endif %}</p>
 							</div>
 						</div>
 						<nav>
 							<ul>
 								<li><a href="#status">Статус</a></li>
 								<li><a href="#custom">Рассылка</a></li>
+								<li><a href="{{url_for('log')}}">Лог</a></li>
 								<li><a href="{{url_for('logout')}}">Выход</a></li>
+								<li><a href="/ds-notify/add" target="blank_">Бот в <i class="fab fa-discord"></i></a></li>
 							</ul>
 						</nav>
 					</header>
@@ -30,7 +32,8 @@
 								Twitch WebHook: {%if status['notify'] == 'active'%}<span style="color:green;">Активен{%elif status['notify'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
 								Подписано в ВК: {{count['vk']}} пользователя(ей) и {{count['vk_chats']}} бесед(ы)<br>
 								Подписано в ДС: {{count['ds']}} сервера(ов)</p>
-								<button onclick="send();" class="button1">Принудительная рассылка</button></center>
+								<h4>Вы можете запустить рассылку вручную, если по какой-либо причине она не была запущена автоматически</h4>
+								<button onclick="send();" class="button1">Запустить</button></center>
 							</article>
 
 						<!-- Donate -->
