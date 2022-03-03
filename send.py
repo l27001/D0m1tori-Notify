@@ -18,7 +18,7 @@ def check_stream(id_):
         return {"error":"Стрим не запущен"}
     streamer = requests.get("https://api.twitch.tv/helix/channels", params={'broadcaster_id': id_}, headers=headers).json()['data'][0]
     # Can use: info['title'], info['game_name'], info['user_name'], info['thumbnail_url'], info['started_at'], info['viewer_count']
-    img = info['thumbnail_url'][:info['thumbnail_url'].find('{')-1] + info['thumbnail_url'][info['thumbnail_url'].rfind('}')+1:]
+    img = info['thumbnail_url'][:info['thumbnail_url'].find('{')-1] + info['thumbnail_url'][info['thumbnail_url'].rfind('}')+1:] + "?d0m_id=" + str(random.randint(0,99999999999))
     img_name = f"{dir_path}/preview.{img.split('.')[-1]}"
     Methods.download_img(img, img_name)
     txt = f"Стрим начался, бегом смотреть!\n{info['game_name']} | {info['title']}\n"
@@ -93,7 +93,8 @@ def send_ds(img, txt, link, custom=False):
               "description": f"**{txt}**",
               "author": {},
               "image": {
-                "url": "https://sun9-53.userapi.com/impf/1uHpklViePFHUn5_E-1PEs4tNaSNBdRS_3rODQ/4pV95Pk1SLo.jpg?size=795x265&quality=95&crop=0,293,2560,853&sign=9f822057e7165f00bb3d67ffbbcfb645&type=cover_group"#img
+                #"url": "https://sun9-53.userapi.com/impf/1uHpklViePFHUn5_E-1PEs4tNaSNBdRS_3rODQ/4pV95Pk1SLo.jpg?size=795x265&quality=95&crop=0,293,2560,853&sign=9f822057e7165f00bb3d67ffbbcfb645&type=cover_group"#img
+                "url": img
               },
               "thumbnail": {},
               "footer": {"text": now},
