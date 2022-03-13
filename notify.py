@@ -8,7 +8,6 @@ from datetime import datetime
 import subprocess, datetime, os, requests, hashlib
 import send, vk, builtins
 from config import twitch_api, client_id, secret, discord, vk_app, vk_info, streamer_info
-from webhook import twitch_api_auth
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 app = Flask(__name__,
@@ -192,8 +191,8 @@ def oauth_check(id_):
 @app.route('/admin/', methods=['GET'])
 @login_required
 def admin():
-    status = {'bot':subp("systemctl is-failed d0m1tori"), 'notify':subp("systemctl is-failed d0m1tori-notify")}
-    count = {'vk':Mysql.query("SELECT COUNT(*) FROM users WHERE notify = 1")['COUNT(*)'], 'vk_chats':Mysql.query("SELECT COUNT(*) FROM chats WHERE notify = 1")['COUNT(*)'], 'ds':Mysql.query("SELECT COUNT(*) FROM webhooks WHERE enabled = 1")['COUNT(*)']}
+    status = {'bot':subp("systemctl is-failed d0m1tori"), 'notify':subp("systemctl is-failed d0m1tori-notify"), 'bot_tg':subp("systemctl is-failed d0m1tori-tg")}
+    count = {'vk':Mysql.query("SELECT COUNT(*) FROM users WHERE notify = 1")['COUNT(*)'], 'vk_chats':Mysql.query("SELECT COUNT(*) FROM chats WHERE notify = 1")['COUNT(*)'], 'ds':Mysql.query("SELECT COUNT(*) FROM webhooks WHERE enabled = 1")['COUNT(*)'], 'tg':Mysql.query("SELECT COUNT(*) FROM tg_users WHERE subscribe = 1")['COUNT(*)'], 'tg_chats':Mysql.query("SELECT COUNT(*) FROM tg_chats WHERE subscribe = 1")['COUNT(*)']}
     return render_template('index.html', user=g.user, title="Панель управления", status=status, count=count)
 
 @app.route('/admin/auth', methods=['GET'])
@@ -262,11 +261,12 @@ def send_():
         ds = request.form.get('ds')
         vk = request.form.get('vk')
         post_vk = request.form.get('post_vk')
-        if(text is None or ds is None or vk is None): return abort(400)
-        a = {'true':1,'false':0};ds = a[ds]; vk = a[vk]; post_vk = a[post_vk]
+        tg = request.form.get('tg')
+        if(text is None or ds is None or vk is None or tg is None): return abort(400)
+        a = {'true':1,'false':0};ds = a[ds]; vk = a[vk]; post_vk = a[post_vk]; tg = a[tg]
         text = text.strip()
         if(text == ''): return {"status":"warning", "description":"Сообщение не может быть пустым"}
-        if(ds == 0 and vk == 0 and post_vk == 0): return {"status":"warning", "description":"Выберите как минимум один способ рассылки"}
+        if(ds == 0 and vk == 0 and post_vk == 0 and tg == 0): return {"status":"warning", "description":"Выберите как минимум один способ рассылки"}
         if(len(text) > 1000): return {"status":"warning", "description":"Размер сообщения не может быть больше 1000 символов"}
         if(vk == 1 and post_vk == 1):
             send.send_vk(None, text, '', True, True)
@@ -276,7 +276,9 @@ def send_():
             send.send_vk(None, text, '', False, True)
         if(ds == 1):
             send.send_ds('', text, '', True)
-        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
+        if(tg == 1):
+            send.send_tg(text)
+        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}, tg:{tg}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка успешно проведена"}
 
 @app.route('/admin/log', methods=["GET", "POST"])

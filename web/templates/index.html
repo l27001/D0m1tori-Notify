@@ -28,10 +28,12 @@
 
 							<article id="status">							
 								<center><h2 class="major">Статус бота</h2>
-								<p>Бот: {%if status['bot'] == 'active'%}<span style="color:green;">Активен{%elif status['bot'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
+								<p>VK Бот: {%if status['bot'] == 'active'%}<span style="color:green;">Активен{%elif status['bot'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
+								TG Бот: {%if status['bot_tg'] == 'active'%}<span style="color:green;">Активен{%elif status['bot_tg'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
 								Twitch WebHook: {%if status['notify'] == 'active'%}<span style="color:green;">Активен{%elif status['notify'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
 								Подписано в ВК: {{count['vk']}} пользователя(ей) и {{count['vk_chats']}} бесед(ы)<br>
-								Подписано в ДС: {{count['ds']}} сервера(ов)</p>
+								Подписано в DS: {{count['ds']}} сервера(ов)<br>
+								Подписано в TG: {{count['tg']}} пользователя(ей) и {{count['tg_chats']}} чат(ов)</p>
 								<h4>Вы можете запустить рассылку вручную, если по какой-либо причине она не была запущена автоматически</h4>
 								<button onclick="send();" class="button1">Запустить</button></center>
 							</article>
@@ -60,11 +62,16 @@
 										<input id="ds" type="checkbox" checked>
 										<span class="checkbox-google-switch"></span>
 										Отправить по серверам ДС
+									</label><br>
+									<label class="checkbox-google">
+										<input id="tg" type="checkbox" checked>
+										<span class="checkbox-google-switch"></span>
+										Отправить в TG
 									</label>
 									</div>
 									<div>
 									<br>
-									<input onclick="send_custom(document.getElementById('ctext').value, document.getElementById('cvk').checked, document.getElementById('vk_post').checked, document.getElementById('ds').checked); return false;" class="orange_button" type="submit" value="Отправить">
+									<input onclick="send_custom(document.getElementById('ctext').value, document.getElementById('cvk').checked, document.getElementById('vk_post').checked, document.getElementById('ds').checked, document.getElementById('tg').checked); return false;" class="orange_button" type="submit" value="Отправить">
 									</div></center> 
 									</form>
                                 </div>
@@ -102,12 +109,12 @@
 	}
 </script>
 <script type="text/javascript">
-	function send_custom(text, vk, post_vk, ds) {
+	function send_custom(text, vk, post_vk, ds, tg) {
 		$.ajax({
 	    	url: "{{url_for('send_')}}",
 	    	dataType: "json",
 	    	async: false,
-	    	data: {action: "custom", text:text, vk:vk, post_vk:post_vk, ds:ds},
+	    	data: {action: "custom", text:text, vk:vk, post_vk:post_vk, ds:ds, tg:tg},
 	    	type: "POST",
 	    	success: function (data) {
 				if(data['status'] == 'success') {

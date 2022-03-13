@@ -53,7 +53,7 @@ def log(prefix, text):
 def check_stream(*args, **kwargs):
     return Methods.check_stream(*args, **kwargs)
 
-def send_notify(txt, link):
+def send_notify(txt, link=""):
     users = Mysql.query("SELECT tgid FROM tg_users WHERE subscribe = 1", fetch="all")
     for user in users:
         try:

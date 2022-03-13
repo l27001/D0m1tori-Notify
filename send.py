@@ -1,17 +1,16 @@
 #!/usr/bin/python3
 import requests, sys, time, random, os, json, vk, builtins
 from datetime import datetime
-from webhook import twitch_api_auth
 from config import vk_info, user_token
 from methods import Methods
-from tg_methods import send_notify as send_tg
+from tg_methods import send_notify
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 session = vk.Session(access_token=vk_info['access_token'])
 builtins.api = vk.API(session, v='5.124', lang='ru')
 
 def check_stream(id_):
-    headers = twitch_api_auth()
+    headers = Methods.twitch_api_auth()
     # id_ = requests.get("https://api.twitch.tv/helix/users?login=godenname", headers=headers).json()['data'][0]['id']
     try:
         info = requests.get("https://api.twitch.tv/helix/streams", headers=headers, params={'user_id':id_, 'first':1}).json()['data'][0]
@@ -133,6 +132,9 @@ def send_ds(img, txt, link, custom=False):
         except:
             Methods.send(331465308, f"send.py: fail discord.send\n{e}")
     Mysql.close()
+
+def send_tg(*args, **kwargs):
+    return send_notify(*args, **kwargs)
 
 if(__name__ == "__main__"):
     id_ = sys.argv[1]
