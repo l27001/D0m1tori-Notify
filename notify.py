@@ -7,7 +7,7 @@ from flask_login import LoginManager, login_user, logout_user, current_user, log
 from datetime import datetime
 import subprocess, datetime, os, requests, hashlib
 import send, vk, builtins
-from config import twitch_api, client_id, secret, discord, vk_app, vk_info
+from config import twitch_api, client_id, secret, discord, vk_app, vk_info, streamer_info
 from webhook import twitch_api_auth
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -129,7 +129,7 @@ def notify():
         return data['challenge'], 200
     check = Mysql.query("SELECT id FROM notify_ids WHERE id=%s", (id_))
     if(check != None):
-        return '', 204
+        return '', 208
     if(data['subscription']['status'] != "enabled"):
         Methods.send(331465308, f"Warning! Action required.\nTwitch notify status is '{data['subscription']['status']}'")
         return '', 204
@@ -249,10 +249,10 @@ def send_():
     action = request.form.get('action')
     if(action is None): return abort(400)
     if(action == "force"):
-        data = send.check_stream(discord['streamer_id'])
+        data = send.check_stream(streamer_info['id'])
         if('error' in data):
             return {"status":"warning", "description":"Сейчас трансляция не ведётся"}
-        subp(f"{dir_path}/send.py {discord['streamer_id']}", shell=True)
+        subp(f"{dir_path}/send.py {streamer_info['id']}", shell=True)
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,"Запущена обычная рассылка", 'stream_send',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка запущена"}
     elif(action == "custom"):

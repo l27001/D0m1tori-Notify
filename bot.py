@@ -93,21 +93,21 @@ def start():
                 os.remove(os.path.join(root, name))
             for name in dirs:
                 os.rmdir(os.path.join(root, name))
-        count = 0
-        while len(procs) != 0:
-            if(count > 10):
-                Methods.log("WARN", f"Не могу завершить подпроцесс(ы). {procs}")
-            for i in range(len(procs)-1, -1, -1):
-                code = procs[i].exitcode
-                if(code == None):
-                    pass
-                elif(code == 0):
-                    procs[i].join()
-                    del(procs[i])
-                else:
-                    procs[i].join()
-                    del(procs[i])
-            count += 1
+        # count = 0
+        # while len(procs) != 0:
+        #     if(count > 10):
+        #         Methods.log("WARN", f"Не могу завершить подпроцесс(ы). {procs}")
+        #     for i in range(len(procs)-1, -1, -1):
+        #         code = procs[i].exitcode
+        #         if(code == None):
+        #             pass
+        #         elif(code == 0):
+        #             procs[i].join()
+        #             del(procs[i])
+        #         else:
+        #             procs[i].join()
+        #             del(procs[i])
+        #     count += 1
         os.rmdir(tmp_dir)
         Mysql.close()
         exit()

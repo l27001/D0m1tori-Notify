@@ -145,3 +145,43 @@ class Methods:
             return "true"
         else:
             return "false"
+
+    def twitch_api_auth():
+        Mysql = Methods.Mysql()
+        now = datetime.datetime.now().timestamp()
+        auth = Mysql.query("SELECT * FROM twitch_api_keys WHERE `not-after`>%s LIMIT 1", (now))
+        if(auth == None):
+            data = {
+                'client_id': config.client_id,
+                'client_secret': config.twitch_api,
+                'grant_type': "client_credentials"
+            }
+            auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data).json()
+            Mysql.query("DELETE FROM twitch_api_keys")
+            Mysql.query("INSERT INTO twitch_api_keys (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], client_id))
+
+            headers.update({
+                'Authorization': f"{auth['token_type'].title()} {auth['access_token']}",
+                'Client-ID': config.client_id,
+            })
+        else:
+            headers.update({
+                'Authorization': f"{auth['type'].title()} {auth['key_']}",
+                'Client-ID': auth['client_id'],
+                })
+        headers.update({'Content-Type': "application/json"})
+        Mysql.close()
+        return headers
+
+    def check_stream():
+        headers = Methods.twitch_api_auth()
+        params = {'user_login': config.streamer_info['id'], 'first': 1}
+        response = requests.get("https://api.twitch.tv/helix/streams", params=params, headers=headers).json()
+        if(response['data'] == []):
+            return "Сейчас трансляция не ведётся."
+        else:
+            response = response['data'][0]
+            return f"Название: {response['title']}\n\
+                Игра: {response['game_name']}\n\
+                Зрителей: {response['viewer_count']}\n\
+                https://twitch.tv/{response['user_login']}"

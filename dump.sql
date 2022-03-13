@@ -1,8 +1,8 @@
--- MariaDB dump 10.19  Distrib 10.5.11-MariaDB, for Linux (aarch64)
+-- MariaDB dump 10.19  Distrib 10.6.5-MariaDB, for Linux (aarch64)
 --
 -- Host: localhost    Database: user7_d0m1tori
 -- ------------------------------------------------------
--- Server version	10.5.11-MariaDB
+-- Server version	10.6.5-MariaDB-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -41,6 +41,37 @@ CREATE TABLE `notify_ids` (
   `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tg_chats`
+--
+
+DROP TABLE IF EXISTS `tg_chats`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tg_chats` (
+  `id` bigint(20) NOT NULL,
+  `subscribe` int(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `subscribe` (`subscribe`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tg_users`
+--
+
+DROP TABLE IF EXISTS `tg_users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tg_users` (
+  `tgid` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dostup` int(11) NOT NULL DEFAULT 0,
+  `subscribe` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`tgid`),
+  KEY `subscribe` (`subscribe`)
+) ENGINE=InnoDB AUTO_INCREMENT=5021037692 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -91,7 +122,7 @@ CREATE TABLE `webhooks` (
   PRIMARY KEY (`id`),
   KEY `enabled` (`enabled`),
   KEY `guild` (`guild`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -111,7 +142,7 @@ CREATE TABLE `weblog` (
   `text` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `user` (`user`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -123,4 +154,4 @@ CREATE TABLE `weblog` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-08-23 20:41:50
+-- Dump completed on 2022-03-13 19:08:54

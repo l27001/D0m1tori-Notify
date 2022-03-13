@@ -4,6 +4,7 @@ from datetime import datetime
 from webhook import twitch_api_auth
 from config import vk_info, user_token
 from methods import Methods
+from tg_methods import send_notify as send_tg
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 session = vk.Session(access_token=vk_info['access_token'])
@@ -141,4 +142,5 @@ if(__name__ == "__main__"):
         exit()
     send_vk(data['img_local'], data['txt'], data['link'])
     send_ds(data['img_link'], data['txt'], data['link'])
+    send_tg(data['txt'], data['link'])
     os.remove(data['img_local'])

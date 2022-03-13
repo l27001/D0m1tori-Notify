@@ -1,7 +1,6 @@
 import datetime, re, timeit, json, requests
 from config import vk_info
 from methods import Methods
-from webhook import twitch_api_auth
 
 class Commands:
 
@@ -156,22 +155,11 @@ class Commands:
 
     def status(userinfo, text):
         """Информация о трансляции"""
-        headers = twitch_api_auth()
-        params = {'user_login': 'd0m1tori', 'first': 1}
-        response = requests.get("https://api.twitch.tv/helix/streams", params=params, headers=headers).json()
-        if(response['data'] == []):
-            Methods.send(userinfo['chat_id'], "Сейчас трансляция не ведётся.")
-        else:
-            response = response['data'][0]
-            txt = f"Название: {response['title']}\n\
-                Игра: {response['game_name']}\n\
-                Зрителей: {response['viewer_count']}\n\
-                https://twitch.tv/{response['user_login']}"
-            Methods.send(userinfo['chat_id'], txt)
+        Methods.send(userinfo['chat_id'], Methods.check_stream())
 
     def dsbot(userinfo, text):
         """Уведомления о трансляциях на ваш сервер дискорд"""
-        Methods.send(userinfo['chat_id'], "https://d0m1tori.ezdn.ru/ds-notify/add")
+        Methods.send(userinfo['chat_id'], "https://d0m1tori.ezdomain.ru/ds-notify/add")
 
 cmds = {'info':Commands.info, 'инфо':Commands.info, 
 'test':Commands.test, 'тест':Commands.test, 
