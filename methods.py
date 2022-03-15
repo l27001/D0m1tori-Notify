@@ -26,18 +26,6 @@ class Methods:
         kx = '{'+kx+'}'
         return re.sub(r"[']",'',kx)
 
-    def log(prefix,message,timestamp=True):
-        if(os.path.isdir(dir_path+"/log/") == False):
-            os.mkdir(dir_path+"/log")
-        file = dir_path+"/log/"+datetime.datetime.today().strftime("%d.%m.%Y")+".log"
-        if(timestamp == True):
-            message = f"({datetime.datetime.today().strftime('%H:%M:%S')}) [{prefix}] {message}"
-        else:
-            message = f"[{prefix}] {message}"
-        print(message)
-        with open(file, 'a', encoding='utf-8') as f:
-            f.write(message+"\n")
-
     def users_get(user_id,fields=''):
         try:
             return api.users.get(user_ids=user_id,fields=fields)
@@ -49,9 +37,7 @@ class Methods:
         def __init__(self):
             self.con = Methods.Mysql.make_con()
 
-        def query(self,query,variables=(),fetch="one",time=False):
-            if(time == True):
-                extime = timeit.default_timer()
+        def query(self,query,variables=(),fetch="one"):
             try:
                 cur = self.con.cursor()
                 cur.execute(query, variables)
@@ -63,8 +49,6 @@ class Methods:
                 data = cur.fetchone()
             else:
                 data = cur.fetchall()
-            if(time == True):
-                Methods.log("Debug",f"Время запроса к MySQL: {str(timeit.default_timer()-extime)}")
             return data
 
         def make_con(self=None):

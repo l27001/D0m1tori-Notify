@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+### Script for sending messages
 import requests, sys, time, random, os, json, vk, builtins
 from datetime import datetime
 from config import vk_info, user_token
@@ -11,13 +12,11 @@ builtins.api = vk.API(session, v='5.124', lang='ru')
 
 def check_stream(id_):
     headers = Methods.twitch_api_auth()
-    # id_ = requests.get("https://api.twitch.tv/helix/users?login=godenname", headers=headers).json()['data'][0]['id']
     try:
         info = requests.get("https://api.twitch.tv/helix/streams", headers=headers, params={'user_id':id_, 'first':1}).json()['data'][0]
     except IndexError:
         return {"error":"Стрим не запущен"}
     streamer = requests.get("https://api.twitch.tv/helix/channels", params={'broadcaster_id': id_}, headers=headers).json()['data'][0]
-    # Can use: info['title'], info['game_name'], info['user_name'], info['thumbnail_url'], info['started_at'], info['viewer_count']
     img = info['thumbnail_url'][:info['thumbnail_url'].find('{')-1] + info['thumbnail_url'][info['thumbnail_url'].rfind('}')+1:] + "?d0m_id=" + str(random.randint(0,99999999999))
     img_name = f"{dir_path}/preview.{img.split('.')[-1]}"
     Methods.download_img(img, img_name)
@@ -93,7 +92,6 @@ def send_ds(img, txt, link, custom=False):
               "description": f"**{txt}**",
               "author": {},
               "image": {
-                #"url": "https://sun9-53.userapi.com/impf/1uHpklViePFHUn5_E-1PEs4tNaSNBdRS_3rODQ/4pV95Pk1SLo.jpg?size=795x265&quality=95&crop=0,293,2560,853&sign=9f822057e7165f00bb3d67ffbbcfb645&type=cover_group"#img
                 "url": img
               },
               "thumbnail": {},

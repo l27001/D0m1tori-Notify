@@ -18,6 +18,13 @@
 								<li><a href="#custom">Рассылка</a></li>
 								<li><a href="{{url_for('log')}}">Лог</a></li>
 								<li><a href="{{url_for('logout')}}">Выход</a></li>
+							</ul>
+						</nav>
+						<nav style="margin-top: 1rem;">
+							<ul>
+								<li><a href="https://twitch.tv/d0m1tori" target="blank_">Стример <i class="fab fa-twitch"></i></a></li>
+								<li><a href="https://vk.com/d0m1tori" target="blank_">Бот в <i class="fab fa-vk"></i></a></li>
+								<li><a href="https://t.me/d0m1tori_bot" target="blank_">Бот в <i class="fab fa-telegram"></i></a></li>
 								<li><a href="/ds-notify/add" target="blank_">Бот в <i class="fab fa-discord"></i></a></li>
 							</ul>
 						</nav>
@@ -28,9 +35,6 @@
 
 							<article id="status">							
 								<center><h2 class="major">Статус бота</h2>
-								<p>VK Бот: {%if status['bot'] == 'active'%}<span style="color:green;">Активен{%elif status['bot'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
-								TG Бот: {%if status['bot_tg'] == 'active'%}<span style="color:green;">Активен{%elif status['bot_tg'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
-								Twitch WebHook: {%if status['notify'] == 'active'%}<span style="color:green;">Активен{%elif status['notify'] == 'inactive'%}<span style="color:gray;">Не запущен{%else%}<span style="color:red;">Произошла ошибка <span style="color:gray;">(авто-перезапуск)</span>{%endif%}</span><br>
 								Подписано в ВК: {{count['vk']}} пользователя(ей) и {{count['vk_chats']}} бесед(ы)<br>
 								Подписано в DS: {{count['ds']}} сервера(ов)<br>
 								Подписано в TG: {{count['tg']}} пользователя(ей) и {{count['tg_chats']}} чат(ов)</p>

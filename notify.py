@@ -191,25 +191,14 @@ def oauth_check(id_):
 @app.route('/admin/', methods=['GET'])
 @login_required
 def admin():
-    status = {'bot':subp("systemctl is-failed d0m1tori"), 'notify':subp("systemctl is-failed d0m1tori-notify"), 'bot_tg':subp("systemctl is-failed d0m1tori-tg")}
     count = {'vk':Mysql.query("SELECT COUNT(*) FROM users WHERE notify = 1")['COUNT(*)'], 'vk_chats':Mysql.query("SELECT COUNT(*) FROM chats WHERE notify = 1")['COUNT(*)'], 'ds':Mysql.query("SELECT COUNT(*) FROM webhooks WHERE enabled = 1")['COUNT(*)'], 'tg':Mysql.query("SELECT COUNT(*) FROM tg_users WHERE subscribe = 1")['COUNT(*)'], 'tg_chats':Mysql.query("SELECT COUNT(*) FROM tg_chats WHERE subscribe = 1")['COUNT(*)']}
-    return render_template('index.html', user=g.user, title="Панель управления", status=status, count=count)
+    return render_template('index.html', user=g.user, title="Панель управления", count=count)
 
 @app.route('/admin/auth', methods=['GET'])
 def auth():
     if(g.user is not None and g.user.is_authenticated == True):
         return redirect(url_for('admin'))
     return render_template('auth.html', title="Авторизация", vk_auth_id=vk_app['id'])
-
-@app.route('/admin/auth/basic', methods=["GET", "POST"])
-def basic_auth():
-    if(g.user is not None and g.user.is_authenticated == True):
-        return redirect(url_for('admin'))
-    if(request.method == "POST"):
-        login = request.form.get('login').strip()
-        password = request.form.get('password').strip()
-        return {"status":"error", "description":"Пока это не работает"}
-    return render_template('basic_auth.html', title="Резервная авторизация")
 
 @app.route('/admin/auth/vk', methods=['POST'])
 def vk_auth():
@@ -231,7 +220,6 @@ def vk_auth():
     elif(res['dostup'] < 1):
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Неудачный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"fail", "description":"Ваш уровень доступа слишком низок."}
-    # mysql_query("INSERT INTO `web_log` (`user`,`ip`,`date`,`country`,`city`,`type`) VALUES (%s,%s,%s,%s,%s,%s)", (res['id'], request.headers['X-Real-IP'], datetime.now().strftime("%H:%M:%S %d.%m.%Y"), request.headers['X-GEOIP2-COUNTRY_NAME'], request.headers['X-GEOIP2-CITY-NAME'], 1))
     login_user(load_user(res['vkid']), remember=True)
     Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Успешный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
     return {"status":"success", "description":"Вы успешно авторизовались!"}
@@ -253,7 +241,7 @@ def send_():
             return {"status":"warning", "description":"Сейчас трансляция не ведётся"}
         subp(f"{dir_path}/send.py {streamer_info['id']}", shell=True)
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,"Запущена обычная рассылка", 'stream_send',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
-        return {"status":"success", "description":"Рассылка запущена"}
+        return {"status":"success", "description":"Рассылка запущена"}, 202
     elif(action == "custom"):
         if(g.user.dostup < 2):
             return {"status":"error", "description":"У вас недостаточно прав для совершения этого действия"}
@@ -279,7 +267,7 @@ def send_():
         if(tg == 1):
             send.send_tg(text)
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}, tg:{tg}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
-        return {"status":"success", "description":"Рассылка успешно проведена"}
+        return {"status":"success", "description":"Рассылка успешно проведена"}, 202
 
 @app.route('/admin/log', methods=["GET", "POST"])
 @login_required

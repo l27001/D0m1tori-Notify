@@ -1,6 +1,8 @@
 #!/usr/bin/python3
+### Discord management script
+### Author: https://vk.com/l27001
 import requests, json
-from config import twitch_api, callback, secret
+from config import twitch_api, secret
 from methods import Methods
 
 if(__name__ == "__main__"):

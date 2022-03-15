@@ -47,9 +47,6 @@ def setting_set(*args, **kwargs):
 def setting_del(*args, **kwargs):
     return Methods.setting_del(*args, **kwargs)
 
-def log(prefix, text):
-    Methods.log(prefix, text)
-
 def check_stream(*args, **kwargs):
     return Methods.check_stream(*args, **kwargs)
 
@@ -59,10 +56,10 @@ def send_notify(txt, link=""):
         try:
             bot.send_message(user['tgid'], txt+"\n"+link, "HTML", disable_notification=False)
         except Exception as e:
-            log("TG_ERR", str(e)+" | User: "+str(user['tgid']))
+            print("TG_ERR", str(e)+" | User: "+str(user['tgid']))
     chats = Mysql.query("SELECT id FROM tg_chats WHERE subscribe = 1", fetch="all")
     for chat in chats:
         try:
             bot.send_message(chat['id'], txt+"\n"+link, "HTML", disable_notification=False)
         except Exception as e:
-            log("TG_ERR", str(e)+" | Chat: "+str(chat['id']))
+            print("TG_ERR", str(e)+" | Chat: "+str(chat['id']))

@@ -1,4 +1,4 @@
-import datetime, re, timeit, json, requests
+import datetime, re, json, requests
 from config import vk_info
 from methods import Methods
 
@@ -6,9 +6,6 @@ class Commands:
 
     def __init__(self, response):
         today = datetime.datetime.today()
-        if(DEBUG == True):
-            extime = timeit.default_timer()
-            print(today.strftime("%H:%M:%S %d.%m.%Y")+ ": "+str(response))
         if(response['type'] not in ['message_new', 'group_leave']):
             return None
         if(response['type'] == 'group_leave'):
@@ -37,7 +34,6 @@ class Commands:
             Mysql.query(f"INSERT INTO users (`vkid`) VALUES ('{from_id}')")
             userinfo = Mysql.query(f"SELECT * FROM users WHERE vkid='{from_id}' LIMIT 1")
         tlog = text.replace("\n",r" \n ")
-        Methods.log("Message", f"'{tlog}' {who}")
         if('payload' in obj):
             try:
                 obj['payload'] = json.loads(obj['payload'])
@@ -74,11 +70,8 @@ class Commands:
             try:
                 cmds[text[0]](userinfo, text[1:])
             except Exception as e:
-                Methods.log("ERROR", f"Непредвиденная ошибка. {str(e)}")
                 Methods.send(chat_id, "⚠ Произошла непредвиденная ошибка.\nОбратитесь к @l27001", attachment="photo-183256712_457239188")
                 raise e
-        if(DEBUG == True):
-            Methods.log("Debug", f"Время выполнения: {str(timeit.default_timer()-extime)}")
 
     def info(userinfo, text):
         """"""
@@ -115,7 +108,7 @@ class Commands:
 
     def test(userinfo, text):
         """"""
-        Methods.send(userinfo['chat_id'], f"{scrname} Bot by @l27001\nDebug: {DEBUG}", disable_mentions=1)
+        Methods.send(userinfo['chat_id'], f"{scrname} Bot by @l27001", disable_mentions=1)
 
     def clrkeyb(userinfo, text):
         """"""
