@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 from hmac import new as hmac
 from hashlib import sha256
-from methods import Methods
 from flask import Flask, request, abort, render_template, url_for, redirect, flash, g, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from datetime import datetime
 import subprocess, datetime, os, requests, hashlib
-import send, vk, builtins
-from config import twitch_api, client_id, secret, discord, vk_app, vk_info, streamer_info
+import methods as Methods
+import send
+import config
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 app = Flask(__name__,
@@ -17,22 +17,22 @@ app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.config['JSON_SORT_KEYS'] = False
 app.config['CSRF_ENABLED'] = True
 app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SECRET_KEY'] = "ZXd1yoMX_8$nkDD+w^H!8qC+yt8N$YMQl-sIrMuQ0w-c3ciUsRqH52HCfVt3S^!f"
-
-session = vk.Session(access_token=vk_info['access_token'])
-builtins.api = vk.API(session, v='5.124', lang='ru')
+app.config['SECRET_KEY'] = config.flask_secret_key
 
 lm = LoginManager()
 lm.init_app(app)
 lm.login_view = 'auth'
 
-def subp(cmd, shell=False):
+def subp(cmd, shell=False, wait=True):
     if(shell):
         proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     else:
-        proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-    proc.wait()
-    return proc.communicate()[0].decode()[:-1]
+        if(type(cmd) is str): cmd = cmd.split()
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    if(wait == True):
+        proc.wait()
+        return proc.communicate()[0].decode()[:-1]
+    return None
 
 class User():
     def __init__(self, user):
@@ -118,7 +118,7 @@ def notify():
         return abort(404)
     data = request.get_json()
     hmac_message = f"{id_}{timestamp}{request.get_data().decode()}"
-    signature = 'sha256=' + str(hmac(secret.encode(), hmac_message.encode(), sha256).hexdigest())
+    signature = 'sha256=' + str(hmac(config.secret.encode(), hmac_message.encode(), sha256).hexdigest())
     if(signature != sign):
         return abort(403)
     time = datetime.datetime.now() - datetime.timedelta(hours=3) - datetime.datetime.strptime(timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")
@@ -132,7 +132,7 @@ def notify():
     if(data['subscription']['status'] != "enabled"):
         Methods.send(331465308, f"Warning! Action required.\nTwitch notify status is '{data['subscription']['status']}'")
         return '', 204
-    subprocess.Popen(f"python3 {dir_path}/send.py {data['event']['broadcaster_user_id']}", shell=True)
+    subp(f"python3 {dir_path}/send.py {data['event']['broadcaster_user_id']}", shell=True, wait=False)
     Mysql.query("INSERT INTO notify_ids (`id`) VALUES (%s)", (id_))
     return '', 202
 
@@ -154,8 +154,8 @@ def oauth():
     if(check is not None):
         return render_template('message.html', title="Информация", status="info", msg='Для этого сервера уже добавлен вебхук', buttons=[{'link':"https://"+request.host+url_for("oauth_check", id_=guild), 'text':'Проверить вебхук'}])
     data = {
-        'client_id': discord['client_id'],
-        'client_secret': discord['client_secret'],
+        'client_id': config.discord['client_id'],
+        'client_secret': config.discord['client_secret'],
         'grant_type': 'authorization_code',
         'code': code,
         'redirect_uri': request.base_url.replace('http://', 'https://')
@@ -178,10 +178,10 @@ def oauth_check(id_):
     if('code' in r):
         if(r['code'] == 10015):
             Mysql.query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
-            return render_template('message.html', title="Информация", status="info", msg="Интеграция была удалёна с сервера. Запись удалена из БД")
+            return render_template('message.html', title="Информация", status="info", msg="Интеграция была удалена с сервра. Запись удалена из БД", buttons=[{'link':"https://"+request.host+"/ds-bot/add", 'text':'Добавить вебхук'}])
         elif(r['code'] == 50027):
             Mysql.query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
-            return render_template('message.html', title="Информация", status="info", msg="Вебхук был удалён с сервера. Запись удалена из БД")
+            return render_template('message.html', title="Информация", status="info", msg="Вебхук был удалён с сервера. Запись удалена из БД", buttons=[{'link':"https://"+request.host+"/ds-bot/add", 'text':'Добавить вебхук'}])
         else: return render_template('message.html', title="Информация", status="info", msg=f"Получен неизвестный код {r['code']}. Никаких действий не выполнено, обратитесь к разработчику")
     else:
         r['token'] = None
@@ -198,7 +198,7 @@ def admin():
 def auth():
     if(g.user is not None and g.user.is_authenticated == True):
         return redirect(url_for('admin'))
-    return render_template('auth.html', title="Авторизация", vk_auth_id=vk_app['id'])
+    return render_template('auth.html', title="Авторизация", vk_auth_id=config.vk_app['id'])
 
 @app.route('/admin/auth/vk', methods=['POST'])
 def vk_auth():
@@ -213,7 +213,7 @@ def vk_auth():
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (331465308,f"Успешный вход (IP auth)", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Вы успешно авторизовались! (based on IP)"}
     if(id_ is None or expire is None or mid is None or secret is None or sid is None or sig is None): return {"status":"fail"}, 400
-    if(hashlib.md5(f"expire={expire}mid={mid}secret={secret}sid={sid}{vk_app['secret']}".encode()).hexdigest() != sig): return {"status":"fail","description":"sig verify failed"}, 400
+    if(hashlib.md5(f"expire={expire}mid={mid}secret={secret}sid={sid}{config.vk_app['secret']}".encode()).hexdigest() != sig): return {"status":"fail","description":"sig verify failed"}, 400
     res = Mysql.query("SELECT vkid,dostup FROM users WHERE vkid=%s", (id_))
     if(res == None):
         return {"status":"fail", "description":"Этого аккаунта нет в базе."}
@@ -236,10 +236,10 @@ def send_():
     action = request.form.get('action')
     if(action is None): return abort(400)
     if(action == "force"):
-        data = send.check_stream(streamer_info['id'])
+        data = send.check_stream(config.streamer_info['id'])
         if('error' in data):
             return {"status":"warning", "description":"Сейчас трансляция не ведётся"}
-        subp(f"{dir_path}/send.py {streamer_info['id']}", shell=True)
+        subp(f"{dir_path}/send.py {config.streamer_info['id']}", shell=True, wait=False)
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,"Запущена обычная рассылка", 'stream_send',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка запущена"}, 202
     elif(action == "custom"):
@@ -266,7 +266,7 @@ def send_():
             send.send_ds('', text, '', True)
         if(tg == 1):
             send.send_tg(text)
-        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}, tg:{tg}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
+        # Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}, tg:{tg}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка успешно проведена"}, 202
 
 @app.route('/admin/log', methods=["GET", "POST"])

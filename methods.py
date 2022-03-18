@@ -1,24 +1,93 @@
-import re, requests, datetime, os, random, timeit, pymysql, pymysql.cursors
+import re, requests, datetime, os, random, time, pymysql, pymysql.cursors
 from pymysql.err import InterfaceError, OperationalError
+from requests import ReadTimeout, ConnectTimeout, HTTPError, Timeout, ConnectionError
+from OpenSSL.SSL import Error as VeryError
 import config
 
 headers = {
-    'User-Agent': "D0m1toriBot/Methods" # 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36 OPR/70.0.3728.133'
+    'User-Agent': "D0m1toriBot/Methods"
 }
 
-class Methods:
+class Mysql:
 
-    def make_button(color="primary",type="text",**kwargs):
+    def __init__(self):
+        self.con = Mysql.make_con()
+
+    def query(self,query,variables=(),fetch="one"):
+        try:
+            cur = self.con.cursor()
+            cur.execute(query, variables)
+        except (InterfaceError,OperationalError):
+            self.con = Mysql.make_con()
+            cur = self.con.cursor()
+            cur.execute(query, variables)
+        if(fetch == "one"):
+            data = cur.fetchone()
+        else:
+            data = cur.fetchall()
+        return data
+
+    def make_con(self=None):
+        return pymysql.connect(host=config.db['host'],
+                 user=config.db['user'],
+                 password=config.db['password'],
+                 db=config.db['database'],
+                 charset='utf8mb4',
+                 autocommit=True,
+                 cursorclass=pymysql.cursors.DictCursor)
+
+    def close(self):
+        self.con.close()
+
+class Vk:
+
+    def __init__(self, token=config.vk_info['access_token'], lang="ru", v="5.124"):
+        self.params = {"access_token":token,"lang":lang,"v":v}
+        self.url = config.vk_info['url']
+
+    def getLongPollServer(self, update_ts=True):
+        params = self.GetRequestParams({'group_id': config.vk_info['groupid']})
+        response = requests.get(self.url+"groups.getLongPollServer", params=params).json()['response']
+        self.key = response['key']
+        self.server = response['server']
+        if(update_ts == True): self.ts = response['ts']
+
+    def UpdateParams(self, key=None, server=None, ts=None):
+        if(key != None):
+            self.key = key
+        if(server != None):
+            self.server = server
+        if(ts != None):
+            self.ts = ts
+
+    def GetRequestParams(self, new_params):
+        params = self.params
+        params.update(new_params)
+        return params
+
+    def getTS(self):
+        return self.ts
+    
+    def getMessages(self):
+        try:
+            response = requests.get(f"{self.server}?act=a_check&key={self.key}&ts={self.ts}&wait=60",
+                timeout=61)
+            return response.json()
+        except(VeryError, ConnectTimeout, HTTPError, ReadTimeout, Timeout, ConnectionError):
+            print("WARN","Сервер не ответил. Жду 3 секунды перед повтором.")
+            time.sleep(3)
+
+    def make_button(self,color="primary",type_="text",**kwargs):
         a = []
         for name,data in kwargs.items():
             a.append('"'+name+'":"'+str(data)+'"')
         kk = ",".join(a)
-        if(type != "intent_unsubscribe" and type != "intent_subscribe"):
-            return"{\"color\":\""+color+"\",\"action\":{\"type\":\""+type+"\","+kk+"}}"
+        if(type_ != "intent_unsubscribe" and type_ != "intent_subscribe"):
+            return"{\"color\":\""+color+"\",\"action\":{\"type\":\""+type_+"\","+kk+"}}"
         else:
-            return"{\"action\":{\"type\":\""+type+"\","+kk+"}}"
+            return"{\"action\":{\"type\":\""+type_+"\","+kk+"}}"
 
-    def construct_keyboard(inline="false",one_time="false",**kwargs):
+    def construct_keyboard(self,inline="false",one_time="false",**kwargs):
         a = []
         for n in kwargs:
             a.append("["+kwargs[n]+"]")
@@ -26,146 +95,159 @@ class Methods:
         kx = '{'+kx+'}'
         return re.sub(r"[']",'',kx)
 
-    def users_get(user_id,fields=''):
-        try:
-            return api.users.get(user_ids=user_id,fields=fields)
-        except:
-            return api.users.get(user_ids=user_id,fields=fields)
+    def users_get(self, user_id, fields=''):
+        params = self.GetRequestParams({"user_ids":user_id, "fields": fields})
+        response = requests.get(f"{self.url}users.get", params=params)
+        return response.json()['response']
 
-    class Mysql:
-
-        def __init__(self):
-            self.con = Methods.Mysql.make_con()
-
-        def query(self,query,variables=(),fetch="one"):
-            try:
-                cur = self.con.cursor()
-                cur.execute(query, variables)
-            except (InterfaceError,OperationalError):
-                self.con = Methods.Mysql.make_con()
-                cur = self.con.cursor()
-                cur.execute(query, variables)
-            if(fetch == "one"):
-                data = cur.fetchone()
-            else:
-                data = cur.fetchall()
-            return data
-
-        def make_con(self=None):
-            return pymysql.connect(host=config.db['host'],
-                user=config.db['user'],
-                password=config.db['password'],
-                db=config.db['database'],
-                charset='utf8mb4',
-                autocommit=True,
-                cursorclass=pymysql.cursors.DictCursor)
-
-        def close(self):
-            self.con.close()
-
-    def send(peer_id,message='',attachment='',keyboard='{"buttons":[]}',disable_mentions=0,intent="default"):
-        return api.messages.send(peer_id=peer_id,random_id=random.randint(1,2147400000),message=message,attachment=attachment,keyboard=keyboard,disable_mentions=disable_mentions,intent=intent)
-
-    def mass_send(peer_ids,message='',attachment='',keyboard='{"buttons":[]}',disable_mentions=0):
-        return api.messages.send(peer_ids=peer_ids,random_id=random.randint(1,2147400000),message=message,attachment=attachment,keyboard=keyboard,disable_mentions=disable_mentions)
-
-    def upload_img(peer_id, file):
-        if(Methods.is_message_allowed(peer_id) == 1):
-            srvv = api.photos.getMessagesUploadServer(peer_id=peer_id)['upload_url']
+    def send(self,peer_id,message='',attachment='',keyboard='{"buttons":[]}',disable_mentions=0,intent="default",mass=False):
+        if(mass == True):
+            params = self.GetRequestParams({"peer_ids":peer_id, "random_id":random.randint(1,2147400000), "message":message, "attachment":attachment, "keyboard":keyboard, "disable_mentions":disable_mentions, "intent":intent})
         else:
-            srvv = api.photos.getMessagesUploadServer(peer_id=331465308)['upload_url']
-        no = requests.post(srvv, files={
-                    'file': open(file, 'rb')
-                }).json()
-        if(no['photo'] == '[]'):
-            return 1
-        response = api.photos.saveMessagesPhoto(photo=no['photo'],server=no['server'],hash=no['hash'])
-        return f"photo{response[0]['owner_id']}_{response[0]['id']}_{response[0]['access_key']}"
+            params = self.GetRequestParams({"peer_id":peer_id, "random_id":random.randint(1,2147400000), "message":message, "attachment":attachment, "keyboard":keyboard, "disable_mentions":disable_mentions, "intent":intent})
+        response = requests.get(f"{self.url}messages.send", params=params).json()
+        return response
 
-    def download_img(url, file):
-        p = requests.get(url, headers=headers)
-        with open(file, "wb") as out:
-            out.write(p.content)
-        return file
+    def is_message_allowed(self, id_):
+        params = self.GetRequestParams({"user_id":id_, "group_id":config.vk_info['groupid']})
+        response = requests.get(f"{self.url}messages.isMessagesFromGroupAllowed", params=params)
+        return response.json()['response']['is_allowed']
 
-    def upload_voice(peer_id,file):
-        if(Methods.is_message_allowed(peer_id) == 1):
-            url = api.docs.getMessagesUploadServer(type='audio_message',peer_id=peer_id)['upload_url']
-        else:
-            url = api.docs.getMessagesUploadServer(type='audio_message',peer_id=331465308)['upload_url']
-        file = requests.post(url, files={
-                    'file': open(file, 'rb')
-                }).json()['file']
-        file = api.docs.save(file=file)
-        return f"doc{file['audio_message']['owner_id']}_{file['audio_message']['id']}_{file['audio_message']['access_key']}"
-
-    def is_message_allowed(id_):
-        try:
-            return api.messages.isMessagesFromGroupAllowed(user_id=id_,group_id=config.vk_info['groupid'])['is_allowed']
-        except:
-            return api.messages.isMessagesFromGroupAllowed(user_id=id_,group_id=config.vk_info['groupid'])['is_allowed']
-
-    def get_conversation_members(peer_id):
-        try:
-            return api.messages.getConversationMembers(group_id=config.vk_info['groupid'],peer_id=peer_id)['items']
-        except Exception as e:
-            if(e.code == 917):
-                return 917
-
-    def check_name(name):
-        return api.utils.resolveScreenName(screen_name=name)
-
-    def kick_user(chat,name):
-        api.messages.removeChatUser(chat_id=chat-2000000000,member_id=name)
-
-    def del_message(message_ids,delete_for_all=1,group_id=config.vk_info['groupid']):
-        return api.messages.delete(message_ids=message_ids,delete_for_all=1,group_id=config.vk_info['groupid'])
-
-    def set_typing(peer_id,type_='typing',group_id=config.vk_info['groupid']):
-        api.messages.setActivity(group_id=config.vk_info['groupid'],peer_id=peer_id,type=type_)
-
-    def check_keyboard(inline):
+    def check_keyboard(self, inline):
         if(inline):
             return "true"
         else:
             return "false"
 
-    def twitch_api_auth():
-        Mysql = Methods.Mysql()
-        now = datetime.datetime.now().timestamp()
-        auth = Mysql.query("SELECT * FROM twitch_api_keys WHERE `not-after`>%s LIMIT 1", (now))
-        if(auth == None):
-            data = {
-                'client_id': config.client_id,
-                'client_secret': config.twitch_api,
-                'grant_type': "client_credentials"
-            }
-            auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data).json()
-            Mysql.query("DELETE FROM twitch_api_keys")
-            Mysql.query("INSERT INTO twitch_api_keys (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], client_id))
+    def getById(self, id_):
+        params = self.GetRequestParams({"group_id": id_})
+        response = requests.get(f"{self.url}groups.getById", params=params)
+        return response.json()['response']
 
-            headers.update({
-                'Authorization': f"{auth['token_type'].title()} {auth['access_token']}",
-                'Client-ID': config.client_id,
+    def upload_img(self, peer_id, file):
+        if(self.is_message_allowed(peer_id) == 1):
+            params = self.GetRequestParams({"peer_id":peer_id})
+        else:
+            params = self.GetRequestParams({"peer_id":331465308})
+        srvv = requests.get(f"{self.url}photos.getMessagesUploadServer", params=params).json()['response']['upload_url']
+        no = requests.post(srvv, files={
+                    'file': open(file, 'rb')
+                }).json()
+        if(no['photo'] == '[]'):
+            return 1
+        params = self.GetRequestParams({"photo":no['photo'],"server":no['server'],"hash":no['hash']})
+        response = requests.get(f"{self.url}photos.saveMessagesPhoto", params=params).json()['response']
+        return f"photo{response[0]['owner_id']}_{response[0]['id']}_{response[0]['access_key']}"
+
+    ### /start/ old api zone
+    # def upload_voice(peer_id,file):
+    #     if(Methods.is_message_allowed(peer_id) == 1):
+    #         url = api.docs.getMessagesUploadServer(type='audio_message',peer_id=peer_id)['upload_url']
+    #     else:
+    #         url = api.docs.getMessagesUploadServer(type='audio_message',peer_id=331465308)['upload_url']
+    #     file = requests.post(url, files={
+    #                 'file': open(file, 'rb')
+    #             }).json()['file']
+    #     file = api.docs.save(file=file)
+    #     return f"doc{file['audio_message']['owner_id']}_{file['audio_message']['id']}_{file['audio_message']['access_key']}"
+
+    # def get_conversation_members(peer_id):
+    #     try:
+    #         return api.messages.getConversationMembers(group_id=config.vk_info['groupid'],peer_id=peer_id)['items']
+    #     except Exception as e:
+    #         if(e.code == 917):
+    #             return 917
+
+    # def check_name(name):
+    #     return api.utils.resolveScreenName(screen_name=name)
+
+    # def kick_user(chat,name):
+    #     api.messages.removeChatUser(chat_id=chat-2000000000,member_id=name)
+
+    # def del_message(message_ids,delete_for_all=1,group_id=config.vk_info['groupid']):
+    #     return api.messages.delete(message_ids=message_ids,delete_for_all=1,group_id=config.vk_info['groupid'])
+
+    # def set_typing(peer_id,type_='typing',group_id=config.vk_info['groupid']):
+    #     api.messages.setActivity(group_id=config.vk_info['groupid'],peer_id=peer_id,type=type_)
+    ### /end/ old api zone
+
+class Tg:
+
+    def __init__(self, token=config.tg_info['access_token']):
+        self.url = f"{config.tg_info['url']}bot{token}/"
+        self.offset = 0
+        self.getMe()
+
+    def getOffset(self):
+        return self.offset
+
+    def setOffset(self, offset):
+        self.offset = offset
+
+    def getUpdates(self, offset=0, timeout=60):
+        data = requests.get(f"{self.url}getUpdates", params={"offset":offset, "timeout":timeout}, timeout=61).json()
+        if(len(data['result']) > 0):
+            self.offset = data['result'][-1]['update_id']+1
+        return data
+
+    def sendMessage(self, chat_id, text, allow_sending_without_reply=True, parse_mode="Markdown", **kwargs):
+        params = {"chat_id":chat_id, "text":text, "allow_sending_without_reply":allow_sending_without_reply, "parse_mode":parse_mode}
+        params.update(kwargs)
+        data = requests.get(f"{self.url}sendMessage", params=params)
+        return data.json()
+
+    def sendPhoto(self, chat_id, photo, **kwargs):
+        params = {"chat_id":chat_id, "photo":photo}
+        params.update(kwargs)
+        data = requests.get(f"{self.url}sendPhoto", params=params)
+        return data.json()
+
+    def getMe(self):
+        data = requests.get(f"{self.url}getMe").json()['result']
+        self.id = data['id']
+        self.username = data['username']
+
+def download_img(url, file):
+    p = requests.get(url, headers=headers)
+    with open(file, "wb") as out:
+        out.write(p.content)
+    return file
+
+def twitch_api_auth():
+    Mysql_ = Mysql()
+    now = datetime.datetime.now().timestamp()
+    auth = Mysql_.query("SELECT * FROM twitch_api_keys WHERE `not-after`>%s LIMIT 1", (now))
+    if(auth == None):
+        data = {
+            'client_id': config.client_id,
+            'client_secret': config.twitch_api,
+            'grant_type': "client_credentials"
+        }
+        auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data).json()
+        Mysql_.query("DELETE FROM twitch_api_keys")
+        Mysql_.query("INSERT INTO twitch_api_keys (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], config.client_id))
+        headers.update({
+            'Authorization': f"{auth['token_type'].title()} {auth['access_token']}",
+            'Client-ID': config.client_id,
+        })
+    else:
+        headers.update({
+            'Authorization': f"{auth['type'].title()} {auth['key_']}",
+            'Client-ID': auth['client_id'],
             })
-        else:
-            headers.update({
-                'Authorization': f"{auth['type'].title()} {auth['key_']}",
-                'Client-ID': auth['client_id'],
-                })
-        headers.update({'Content-Type': "application/json"})
-        Mysql.close()
-        return headers
+    headers.update({'Content-Type': "application/json"})
+    Mysql_.close()
+    return headers
 
-    def check_stream():
-        headers = Methods.twitch_api_auth()
-        params = {'user_login': config.streamer_info['id'], 'first': 1}
-        response = requests.get("https://api.twitch.tv/helix/streams", params=params, headers=headers).json()
-        if(response['data'] == []):
-            return "Сейчас трансляция не ведётся."
-        else:
-            response = response['data'][0]
-            return f"Название: {response['title']}\n\
-                Игра: {response['game_name']}\n\
-                Зрителей: {response['viewer_count']}\n\
-                https://twitch.tv/{response['user_login']}"
+def check_stream():
+    headers = twitch_api_auth()
+    params = {'user_login': config.streamer_info['id'], 'first': 1}
+    response = requests.get("https://api.twitch.tv/helix/streams", params=params, headers=headers).json()
+    if(response['data'] == []):
+        return "Сейчас трансляция не ведётся."
+    else:
+        response = response['data'][0]
+        return f"Название: {response['title']}\n\
+            Игра: {response['game_name']}\n\
+            Зрителей: {response['viewer_count']}\n\
+            https://twitch.tv/{response['user_login']}"
