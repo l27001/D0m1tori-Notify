@@ -14,10 +14,10 @@ class Commands:
             self.text = data['text'].split()
             self.msg_id = data['message_id']
         if(self.is_chat):
-            self.chat_info = Mysql.query("SELECT * FROM tg_chats WHERE id = %s", (self.from_chat,))
+            self.chat_info = Mysql.query("SELECT * FROM tg_subscribe WHERE id = %s", (self.from_chat,))
             if(self.chat_info == None):
-                Mysql.query("INSERT INTO tg_chats (`id`) VALUES (%s)", (self.from_chat,))
-                self.chat_info = Mysql.query("SELECT * FROM tg_chats WHERE id = %s", (self.from_chat,))
+                Mysql.query("INSERT INTO tg_subscribe (`id`) VALUES (%s)", (self.from_chat,))
+                self.chat_info = Mysql.query("SELECT * FROM tg_subscribe WHERE id = %s", (self.from_chat,))
             self.text[0] = self.text[0].split("@")
             if(len(self.text[0]) > 1):
                 if(self.text[0][1] != Tg.username):
@@ -26,10 +26,10 @@ class Commands:
                     self.text[0] = self.text[0][0]
         else:
             self.chat_info = None
-        self.user_info = Mysql.query("SELECT * FROM tg_users WHERE tgid = %s", (self.from_user,))
+        self.user_info = Mysql.query("SELECT * FROM tg_subscribe WHERE id = %s", (self.from_user,))
         if(self.user_info == None):
-            Mysql.query("INSERT INTO tg_users (`tgid`) VALUES (%s)", (self.from_user,))
-            self.user_info = Mysql.query("SELECT * FROM tg_users WHERE tgid = %s", (self.from_user,))
+            Mysql.query("INSERT INTO tg_subscribe (`id`) VALUES (%s)", (self.from_user,))
+            self.user_info = Mysql.query("SELECT * FROM tg_subscribe WHERE id = %s", (self.from_user,))
         if(cmds.get(self.text[0]) == None):
             if(self.is_chat == False):
                 Tg.sendMessage(self.from_chat, "👎🏻 Не понял", reply_to_message_id=self.msg_id)
@@ -65,17 +65,17 @@ class Commands:
     def subscribe(self):
         if(self.is_chat):
             if(self.chat_info['subscribe'] == 1):
-                Mysql.query("UPDATE tg_chats SET subscribe=0 WHERE id = %s", (self.from_chat,))
+                Mysql.query("UPDATE tg_subscribe SET subscribe=0 WHERE id = %s", (self.from_chat,))
                 txt = "✅ Вы успешно *отписали беседу* от уведомлений о трансляциях"
             else:
-                Mysql.query("UPDATE tg_chats SET subscribe=1 WHERE id = %s", (self.from_chat,))
+                Mysql.query("UPDATE tg_subscribe SET subscribe=1 WHERE id = %s", (self.from_chat,))
                 txt = "✅ Вы успешно *подписали беседу* на уведомления о трансляциях"
         else:
             if(self.user_info['subscribe'] == 1):
-                Mysql.query("UPDATE tg_users SET subscribe=0 WHERE tgid = %s", (self.from_user,))
+                Mysql.query("UPDATE tg_subscribe SET subscribe=0 WHERE id = %s", (self.from_user,))
                 txt = "✅ Вы успешно *отписались* от уведомлений о трансляциях"
             else:
-                Mysql.query("UPDATE tg_users SET subscribe=1 WHERE tgid = %s", (self.from_user,))
+                Mysql.query("UPDATE tg_subscribe SET subscribe=1 WHERE id = %s", (self.from_user,))
                 txt = "✅ Вы успешно *подписались* на уведомления о трансляциях"
         Tg.sendMessage(self.from_chat, txt, reply_to_message_id=self.msg_id)
 

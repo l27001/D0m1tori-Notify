@@ -126,14 +126,14 @@ def notify():
         return abort(403)
     if(message_type == "webhook_callback_verification"):
         return data['challenge'], 200
-    check = Mysql.query("SELECT id FROM notify_ids WHERE id=%s", (id_))
+    check = Mysql.query("SELECT id FROM notify_id WHERE id=%s", (id_))
     if(check != None):
         return '', 208
     if(data['subscription']['status'] != "enabled"):
         Methods.send(331465308, f"Warning! Action required.\nTwitch notify status is '{data['subscription']['status']}'")
         return '', 204
     subp(f"python3 {dir_path}/send.py {data['event']['broadcaster_user_id']}", shell=True, wait=False)
-    Mysql.query("INSERT INTO notify_ids (`id`) VALUES (%s)", (id_))
+    Mysql.query("INSERT INTO notify_id (`id`) VALUES (%s)", (id_))
     return '', 202
 
 @app.route('/notify/oauth')
@@ -150,7 +150,7 @@ def oauth():
     except AttributeError: return abort(503)
     if(guild == '' or code == ''):
         return abort(503)
-    check = Mysql.query("SELECT id FROM webhooks WHERE guild = %s", (guild))
+    check = Mysql.query("SELECT id FROM webhook WHERE guild = %s", (guild))
     if(check is not None):
         return render_template('message.html', title="Информация", status="info", msg='Для этого сервера уже добавлен вебхук', buttons=[{'link':"https://"+request.host+url_for("oauth_check", id_=guild), 'text':'Проверить вебхук'}])
     data = {
@@ -164,23 +164,24 @@ def oauth():
     if(r.status_code != 200):
         return abort(400)
     r = r.json()
-    Mysql.query("INSERT INTO webhooks (`link`, `guild`) VALUES (%s, %s)", (r['webhook']['url'], guild))
+    Mysql.query("INSERT INTO webhook (`link`, `guild`) VALUES (%s, %s)", (r['webhook']['url'], guild))
     return render_template('message.html', title="Информация", status="success", msg="Вебхук успешно добавлен"), 202
 
 @app.route('/notify/oauth/check_<int:id_>')
 @app.route('/notify/oauth/check/<int:id_>')
+@app.route('/notify/check/<int:id_>')
 def oauth_check(id_):
     if(id_ <= 0): return abort(400)
-    webhook = Mysql.query("SELECT id,link FROM webhooks WHERE guild = %s", (id_))
+    webhook = Mysql.query("SELECT id,link FROM webhook WHERE guild = %s", (id_))
     if(webhook is None): return render_template('message.html', title="Информация", status="fail", msg="Сервер с таким ID не найден в БД"), 400
     r = requests.get(webhook['link'])
     r = r.json()
     if('code' in r):
         if(r['code'] == 10015):
-            Mysql.query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
+            Mysql.query("DELETE FROM webhook WHERE id = %s", (webhook['id']))
             return render_template('message.html', title="Информация", status="info", msg="Интеграция была удалена с сервра. Запись удалена из БД", buttons=[{'link':"https://"+request.host+"/ds-bot/add", 'text':'Добавить вебхук'}])
         elif(r['code'] == 50027):
-            Mysql.query("DELETE FROM webhooks WHERE id = %s", (webhook['id']))
+            Mysql.query("DELETE FROM webhook WHERE id = %s", (webhook['id']))
             return render_template('message.html', title="Информация", status="info", msg="Вебхук был удалён с сервера. Запись удалена из БД", buttons=[{'link':"https://"+request.host+"/ds-bot/add", 'text':'Добавить вебхук'}])
         else: return render_template('message.html', title="Информация", status="info", msg=f"Получен неизвестный код {r['code']}. Никаких действий не выполнено, обратитесь к разработчику")
     else:
@@ -191,7 +192,7 @@ def oauth_check(id_):
 @app.route('/admin/', methods=['GET'])
 @login_required
 def admin():
-    count = {'vk':Mysql.query("SELECT COUNT(*) FROM users WHERE notify = 1")['COUNT(*)'], 'vk_chats':Mysql.query("SELECT COUNT(*) FROM chats WHERE notify = 1")['COUNT(*)'], 'ds':Mysql.query("SELECT COUNT(*) FROM webhooks WHERE enabled = 1")['COUNT(*)'], 'tg':Mysql.query("SELECT COUNT(*) FROM tg_users WHERE subscribe = 1")['COUNT(*)'], 'tg_chats':Mysql.query("SELECT COUNT(*) FROM tg_chats WHERE subscribe = 1")['COUNT(*)']}
+    count = {'vk':Mysql.query("SELECT COUNT(*) FROM users WHERE notify = 1")['COUNT(*)'], 'vk_chats':Mysql.query("SELECT COUNT(*) FROM chats WHERE notify = 1")['COUNT(*)'], 'ds':Mysql.query("SELECT COUNT(*) FROM webhook WHERE enabled = 1")['COUNT(*)'], 'tg':Mysql.query("SELECT COUNT(*) FROM tg_subscribe WHERE subscribe = 1 AND id > 0")['COUNT(*)'], 'tg_chats':Mysql.query("SELECT COUNT(*) FROM tg_subscribe WHERE subscribe = 1 AND id < 0")['COUNT(*)']}
     return render_template('index.html', user=g.user, title="Панель управления", count=count)
 
 @app.route('/admin/auth', methods=['GET'])

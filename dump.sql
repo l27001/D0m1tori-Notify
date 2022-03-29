@@ -23,65 +23,50 @@ DROP TABLE IF EXISTS `chats`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `chats` (
-  `id` int(11) NOT NULL,
-  `notify` int(1) NOT NULL DEFAULT 0,
+  `id` int(11) unsigned NOT NULL,
+  `notify` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `notify` (`notify`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `notify_ids`
+-- Table structure for table `notify_id`
 --
 
-DROP TABLE IF EXISTS `notify_ids`;
+DROP TABLE IF EXISTS `notify_id`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `notify_ids` (
+CREATE TABLE `notify_id` (
   `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `tg_chats`
+-- Table structure for table `tg_subscribe`
 --
 
-DROP TABLE IF EXISTS `tg_chats`;
+DROP TABLE IF EXISTS `tg_subscribe`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `tg_chats` (
-  `id` bigint(20) NOT NULL,
-  `subscribe` int(1) NOT NULL DEFAULT 0,
+CREATE TABLE `tg_subscribe` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dostup` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `subscribe` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  KEY `subscribe` (`subscribe`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `tg_users`
---
-
-DROP TABLE IF EXISTS `tg_users`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `tg_users` (
-  `tgid` bigint(20) NOT NULL AUTO_INCREMENT,
-  `dostup` int(11) NOT NULL DEFAULT 0,
-  `subscribe` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`tgid`),
   KEY `subscribe` (`subscribe`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5021037692 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `twitch_api_keys`
+-- Table structure for table `twitch_api_key`
 --
 
-DROP TABLE IF EXISTS `twitch_api_keys`;
+DROP TABLE IF EXISTS `twitch_api_key`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `twitch_api_keys` (
+CREATE TABLE `twitch_api_key` (
   `key_` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
   `not-after` int(12) NOT NULL,
   `type` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -99,30 +84,30 @@ DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `users` (
-  `vkid` int(30) NOT NULL,
-  `dostup` int(1) NOT NULL DEFAULT 0,
-  `notify` int(1) NOT NULL DEFAULT 0,
+  `vkid` int(11) unsigned NOT NULL,
+  `dostup` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `notify` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`vkid`),
   KEY `notify` (`notify`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `webhooks`
+-- Table structure for table `webhook`
 --
 
-DROP TABLE IF EXISTS `webhooks`;
+DROP TABLE IF EXISTS `webhook`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `webhooks` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `webhook` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `link` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,
   `guild` bigint(32) NOT NULL,
-  `enabled` int(1) NOT NULL DEFAULT 1,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   KEY `enabled` (`enabled`),
   KEY `guild` (`guild`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -133,8 +118,8 @@ DROP TABLE IF EXISTS `weblog`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `weblog` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user` int(11) NOT NULL,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user` int(11) unsigned NOT NULL,
   `ip` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,
   `date` datetime NOT NULL,
   `description` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -142,7 +127,7 @@ CREATE TABLE `weblog` (
   `text` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `user` (`user`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -154,4 +139,4 @@ CREATE TABLE `weblog` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-03-13 19:08:54
+-- Dump completed on 2022-03-29 19:35:32

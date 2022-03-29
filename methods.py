@@ -46,13 +46,13 @@ class Vk:
         self.url = config.vk_info['url']
 
     def getLongPollServer(self, update_ts=True):
-        params = self.GetRequestParams({'group_id': config.vk_info['groupid']})
+        params = self.getRequestParams({'group_id': config.vk_info['groupid']})
         response = requests.get(self.url+"groups.getLongPollServer", params=params).json()['response']
         self.key = response['key']
         self.server = response['server']
         if(update_ts == True): self.ts = response['ts']
 
-    def UpdateParams(self, key=None, server=None, ts=None):
+    def updateParams(self, key=None, server=None, ts=None):
         if(key != None):
             self.key = key
         if(server != None):
@@ -60,7 +60,7 @@ class Vk:
         if(ts != None):
             self.ts = ts
 
-    def GetRequestParams(self, new_params):
+    def getRequestParams(self, new_params):
         params = self.params
         params.update(new_params)
         return params
@@ -96,20 +96,20 @@ class Vk:
         return re.sub(r"[']",'',kx)
 
     def users_get(self, user_id, fields=''):
-        params = self.GetRequestParams({"user_ids":user_id, "fields": fields})
+        params = self.getRequestParams({"user_ids":user_id, "fields": fields})
         response = requests.get(f"{self.url}users.get", params=params)
         return response.json()['response']
 
     def send(self,peer_id,message='',attachment='',keyboard='{"buttons":[]}',disable_mentions=0,intent="default",mass=False):
         if(mass == True):
-            params = self.GetRequestParams({"peer_ids":peer_id, "random_id":random.randint(1,2147400000), "message":message, "attachment":attachment, "keyboard":keyboard, "disable_mentions":disable_mentions, "intent":intent})
+            params = self.getRequestParams({"peer_ids":peer_id, "random_id":random.randint(1,2147400000), "message":message, "attachment":attachment, "keyboard":keyboard, "disable_mentions":disable_mentions, "intent":intent})
         else:
-            params = self.GetRequestParams({"peer_id":peer_id, "random_id":random.randint(1,2147400000), "message":message, "attachment":attachment, "keyboard":keyboard, "disable_mentions":disable_mentions, "intent":intent})
+            params = self.getRequestParams({"peer_id":peer_id, "random_id":random.randint(1,2147400000), "message":message, "attachment":attachment, "keyboard":keyboard, "disable_mentions":disable_mentions, "intent":intent})
         response = requests.get(f"{self.url}messages.send", params=params).json()
         return response
 
     def is_message_allowed(self, id_):
-        params = self.GetRequestParams({"user_id":id_, "group_id":config.vk_info['groupid']})
+        params = self.getRequestParams({"user_id":id_, "group_id":config.vk_info['groupid']})
         response = requests.get(f"{self.url}messages.isMessagesFromGroupAllowed", params=params)
         return response.json()['response']['is_allowed']
 
@@ -120,22 +120,22 @@ class Vk:
             return "false"
 
     def getById(self, id_):
-        params = self.GetRequestParams({"group_id": id_})
+        params = self.getRequestParams({"group_id": id_})
         response = requests.get(f"{self.url}groups.getById", params=params)
         return response.json()['response']
 
     def upload_img(self, peer_id, file):
         if(self.is_message_allowed(peer_id) == 1):
-            params = self.GetRequestParams({"peer_id":peer_id})
+            params = self.getRequestParams({"peer_id":peer_id})
         else:
-            params = self.GetRequestParams({"peer_id":331465308})
+            params = self.getRequestParams({"peer_id":331465308})
         srvv = requests.get(f"{self.url}photos.getMessagesUploadServer", params=params).json()['response']['upload_url']
         no = requests.post(srvv, files={
                     'file': open(file, 'rb')
                 }).json()
         if(no['photo'] == '[]'):
             return 1
-        params = self.GetRequestParams({"photo":no['photo'],"server":no['server'],"hash":no['hash']})
+        params = self.getRequestParams({"photo":no['photo'],"server":no['server'],"hash":no['hash']})
         response = requests.get(f"{self.url}photos.saveMessagesPhoto", params=params).json()['response']
         return f"photo{response[0]['owner_id']}_{response[0]['id']}_{response[0]['access_key']}"
 
@@ -216,7 +216,7 @@ def download_img(url, file):
 def twitch_api_auth():
     Mysql_ = Mysql()
     now = datetime.datetime.now().timestamp()
-    auth = Mysql_.query("SELECT * FROM twitch_api_keys WHERE `not-after`>%s LIMIT 1", (now))
+    auth = Mysql_.query("SELECT * FROM twitch_api_key WHERE `not-after`>%s LIMIT 1", (now))
     if(auth == None):
         data = {
             'client_id': config.client_id,
@@ -224,8 +224,8 @@ def twitch_api_auth():
             'grant_type': "client_credentials"
         }
         auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data).json()
-        Mysql_.query("DELETE FROM twitch_api_keys")
-        Mysql_.query("INSERT INTO twitch_api_keys (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], config.client_id))
+        Mysql_.query("DELETE FROM twitch_api_key")
+        Mysql_.query("INSERT INTO twitch_api_key (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], config.client_id))
         headers.update({
             'Authorization': f"{auth['token_type'].title()} {auth['access_token']}",
             'Client-ID': config.client_id,

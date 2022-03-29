@@ -18,7 +18,7 @@ def start():
         Vk.getLongPollServer()
         try:
             with open(dir_path+"/vk_TS", 'r') as f:
-                Vk.UpdateParams(ts=f.read())
+                Vk.updateParams(ts=f.read())
         except FileNotFoundError:
             pass
         try:
@@ -34,21 +34,19 @@ def start():
                 response = Vk.getMessages()
                 if('failed' in response):
                     if(response['failed'] == 1):
-                        Vk.UpdateParams(ts=response['ts'])
+                        Vk.updateParams(ts=response['ts'])
                     elif(response['failed'] == 2):
                         Vk.getLongPollServer(update_ts=False)
                     else:
                         Vk.getLongPollServer()
                     continue
                 if(response['ts'] != Vk.getTS()):
-                    Vk.UpdateParams(ts=response['ts'])
+                    Vk.updateParams(ts=response['ts'])
                     with open(dir_path+"/vk_TS", 'w') as f:
                         f.write(Vk.getTS())
                     for res in response['updates']:
                         Commands(res)
     except KeyboardInterrupt:
-        pass
-    finally:
         print("INFO", "Завершение...")
         for root, dirs, files in os.walk(config.tmp_dir, topdown=False):
             for name in files:

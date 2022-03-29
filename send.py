@@ -77,7 +77,7 @@ def send_vk(img_name, txt, link='', post=True, rass=True):
 
 def send_ds(img, txt, link, custom=False):
     Mysql = Methods.Mysql()
-    guilds = Mysql.query("SELECT * FROM webhooks WHERE enabled = 1", fetch="all")
+    guilds = Mysql.query("SELECT * FROM webhook WHERE enabled = 1", fetch="all")
     now = datetime.now().strftime("%H:%M %d.%m.%Y")
     headers = {
         'Content-Type': 'application/json'
@@ -123,7 +123,7 @@ def send_ds(img, txt, link, custom=False):
             if(r.status_code != 204):
                 rdata = r.json()
                 if('code' in rdata and rdata['code'] == 10015):
-                    Mysql.query("DELETE FROM webhooks WHERE id = %s", (guild['id']))
+                    Mysql.query("DELETE FROM webhook WHERE id = %s", (guild['id']))
                 elif('code' in rdata):
                     print(rdata)
         except:
@@ -133,18 +133,12 @@ def send_ds(img, txt, link, custom=False):
 def send_tg(txt, link=""):
     Tg = Methods.Tg()
     Mysql = Methods.Mysql()
-    users = Mysql.query("SELECT tgid FROM tg_users WHERE subscribe=1", fetch="all")
-    for user in users:
+    subs = Mysql.query("SELECT id FROM tg_subscribe WHERE subscribe=1", fetch="all")
+    for subscriber in subs:
         try:
-            Tg.sendMessage(user['tgid'], txt+link)
+            Tg.sendMessage(subscriber['id'], txt+link)
         except:
-            print("ERROR", f"Error Tg.sendMessage to user {user['tgid']}")
-    chats = Mysql.query("SELECT id FROM tg_chats WHERE subscribe=1", fetch="all")
-    for chat in chats:
-        try:
-            Tg.sendMessage(chat['id'], txt+link)
-        except:
-            print("ERROR", f"Error Tg.sendMessage to chat {chat['id']}")
+            print("ERROR", f"Error Tg.sendMessage to {subscriber['id']}")
     Mysql.close()
 
 if(__name__ == "__main__"):
