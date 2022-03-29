@@ -51,12 +51,12 @@ DROP TABLE IF EXISTS `tg_subscribe`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `tg_subscribe` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) NOT NULL,
   `dostup` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `subscribe` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `subscribe` (`subscribe`)
-) ENGINE=InnoDB AUTO_INCREMENT=5021037692 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -139,4 +139,4 @@ CREATE TABLE `weblog` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-03-29 19:35:32
+-- Dump completed on 2022-03-29 21:31:47
