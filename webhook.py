@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-### Discord management script
+### Twitch webhook management script
 ### Author: https://vk.com/l27001
 import requests, json
 from config import twitch_api, secret
@@ -55,11 +55,11 @@ if(__name__ == "__main__"):
         data = requests.post("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers, data=data).json()
         total = data['total']
         data = data['data'][0]
-        print(f"Success!\nCheck is webhook confrimed with 'webhook.py list'\nAnd don't forget to change streamer_info['id'] in config!\nID: {data['id']}\nStatus: {data['status']}\nBroadcaster-ID: {data['condition']['broadcaster_user_id']}\nTotal webhook: {total}")
+        print(f"Success!\nCheck is webhook confrimed with 'webhook.py list'\nAnd don't forget to change streamer_info['id'] in config!\nID: {data['id']}\nStatus: {data['status']}\nBroadcaster-ID: {data['condition']['broadcaster_user_id']}\nTotal webhooks: {total}")
     elif(action == 'list'):
         headers = methods.twitch_api_auth()
         list_ = requests.get("https://api.twitch.tv/helix/eventsub/subscriptions", headers=headers).json()
-        print(f"Total webhook: {list_['total']}")
+        print(f"Total webhooks: {list_['total']}")
         for data in list_['data']:
             print("-"*10)
             print(f"ID: {data['id']}\nStatus: {data['status']}\nBroadcaster-ID: {data['condition']['broadcaster_user_id']}\nLink: {data['transport']['callback']}")
