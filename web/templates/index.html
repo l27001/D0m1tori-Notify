@@ -88,28 +88,32 @@
 		$.ajax({
 	    	url: "{{url_for('send_')}}",
 	    	dataType: "json",
-	    	async: false,
+	    	async: true,
 	    	data: {action: "force"},
 	    	type: "POST",
 	    	success: function (data) {
 				if(data['status'] == 'success') {
+					toastr.clear();
 					toastr.success(data['description']);
 				}
 				else if(data['status'] == 'unauthorized') {
+					toastr.clear();
 					toastr.error(data['description']);
 					setTimeout("location.href = '/auth'", 2000);
 				}
 				else if(data['status'] == 'warning') {
+					toastr.clear();
 					toastr.warning(data['description']);
 				}
 				else {
+					toastr.clear();
 					toastr.error(data['description']);
 				}
 		    },
 		    error: function(data) {
 				toastr.error("Произошла неизвестная ошибка, стоит обратиться к разработчику!");
     		},
-		    beforeRequest: function(data) {
+		    beforeSend: function(data) {
 		    	toastr.info("Операция выполняется...");
 		    }
 		});
@@ -120,28 +124,32 @@
 		$.ajax({
 	    	url: "{{url_for('send_')}}",
 	    	dataType: "json",
-	    	async: false,
+	    	async: true,
 	    	data: {action: "custom", text:text, vk:vk, post_vk:post_vk, ds:ds, tg:tg},
 	    	type: "POST",
 	    	success: function (data) {
 				if(data['status'] == 'success') {
+					toastr.clear();
 					toastr.success(data['description']);
 				}
 				else if(data['status'] == 'unauthorized') {
+					toastr.clear();
 					toastr.error(data['description']);
 					setTimeout("location.href = '/auth'", 2000);
 				}
 				else if(data['status'] == 'warning') {
+					toastr.clear();
 					toastr.warning(data['description']);
 				}
 				else {
+					toastr.clear();
 					toastr.error(data['description']);
 				}
 		    },
     		error: function(data) {
 				toastr.error("Произошла неизвестная ошибка, стоит обратиться к разработчику!");
     		},
-		    beforeRequest: function(data) {
+		    beforeSend: function(data) {
 		    	toastr.info("Операция выполняется...");
 		    }
 		});

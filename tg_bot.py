@@ -23,9 +23,6 @@ try:
             with open(dir_path+"/tg_TS", "w") as f:
                 f.write(str(Tg.getOffset()))
         for n in data['result']:
-            ### Здесь должны обрабатываться события
-            ### но мне лень писать что-то дальше
-            print(n)
             Commands(n)
 
 except KeyboardInterrupt:

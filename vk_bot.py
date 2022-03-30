@@ -47,6 +47,8 @@ def start():
                     for res in response['updates']:
                         Commands(res)
     except KeyboardInterrupt:
+        pass
+    finally:
         print("INFO", "Завершение...")
         for root, dirs, files in os.walk(config.tmp_dir, topdown=False):
             for name in files:
@@ -54,7 +56,6 @@ def start():
             for name in dirs:
                 os.rmdir(os.path.join(root, name))
         Mysql.close()
-        exit()
 
 print("INFO", "Запуск бота...")
 try:

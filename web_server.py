@@ -45,7 +45,7 @@ class User():
             self.is_authenticated = True
             self.is_active = True
             self.is_anonymous = False
-            self.id = user['vkid']
+            self.id = user['id']
             self.dostup = user['dostup']
             self.info = user
 
@@ -65,13 +65,13 @@ def before_request():
         return None
     g.user = current_user
     if(g.user is not None and g.user.is_authenticated == True):
-        if(Mysql.query("SELECT vkid FROM users WHERE vkid = %s AND dostup >= 1", (g.user.id)) is None):
+        if(Mysql.query("SELECT id FROM vk_subscribe WHERE id = %s AND dostup >= 1", (g.user.id)) is None):
             logout_user()
             return redirect(url_for('auth'))
 
 @lm.user_loader
 def load_user(user_id):
-    return User(Mysql.query("SELECT * FROM users WHERE vkid=%s LIMIT 1", (user_id)))
+    return User(Mysql.query("SELECT * FROM vk_subscribe WHERE id=%s LIMIT 1", (user_id)))
 
 @app.errorhandler(403)
 def err403(e):
@@ -192,7 +192,7 @@ def oauth_check(id_):
 @app.route('/admin/', methods=['GET'])
 @login_required
 def admin():
-    count = {'vk':Mysql.query("SELECT COUNT(*) FROM users WHERE notify = 1")['COUNT(*)'], 'vk_chats':Mysql.query("SELECT COUNT(*) FROM chats WHERE notify = 1")['COUNT(*)'], 'ds':Mysql.query("SELECT COUNT(*) FROM webhook WHERE enabled = 1")['COUNT(*)'], 'tg':Mysql.query("SELECT COUNT(*) FROM tg_subscribe WHERE subscribe = 1 AND id > 0")['COUNT(*)'], 'tg_chats':Mysql.query("SELECT COUNT(*) FROM tg_subscribe WHERE subscribe = 1 AND id < 0")['COUNT(*)']}
+    count = {'vk':Mysql.query("SELECT COUNT(*) FROM vk_subscribe WHERE subscribe = 1 AND id < 2000000000")['COUNT(*)'], 'vk_chats':Mysql.query("SELECT COUNT(*) FROM vk_subscribe WHERE subscribe = 1 AND id >= 2000000000")['COUNT(*)'], 'ds':Mysql.query("SELECT COUNT(*) FROM webhook WHERE enabled = 1")['COUNT(*)'], 'tg':Mysql.query("SELECT COUNT(*) FROM tg_subscribe WHERE subscribe = 1 AND id > 0")['COUNT(*)'], 'tg_chats':Mysql.query("SELECT COUNT(*) FROM tg_subscribe WHERE subscribe = 1 AND id < 0")['COUNT(*)']}
     return render_template('index.html', user=g.user, title="Панель управления", count=count)
 
 @app.route('/admin/auth', methods=['GET'])
@@ -215,14 +215,14 @@ def vk_auth():
         return {"status":"success", "description":"Вы успешно авторизовались! (based on IP)"}
     if(id_ is None or expire is None or mid is None or secret is None or sid is None or sig is None): return {"status":"fail"}, 400
     if(hashlib.md5(f"expire={expire}mid={mid}secret={secret}sid={sid}{config.vk_app['secret']}".encode()).hexdigest() != sig): return {"status":"fail","description":"sig verify failed"}, 400
-    res = Mysql.query("SELECT vkid,dostup FROM users WHERE vkid=%s", (id_))
+    res = Mysql.query("SELECT id,dostup FROM vk_subscribe WHERE id=%s", (id_))
     if(res == None):
         return {"status":"fail", "description":"Этого аккаунта нет в базе."}
     elif(res['dostup'] < 1):
-        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Неудачный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
+        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['id'],f"Неудачный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"fail", "description":"Ваш уровень доступа слишком низок."}
-    login_user(load_user(res['vkid']), remember=True)
-    Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['vkid'],f"Успешный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
+    login_user(load_user(res['id']), remember=True)
+    Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (res['id'],f"Успешный вход. Dostup: {res['dostup']}", 'auth',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
     return {"status":"success", "description":"Вы успешно авторизовались!"}
 
 @app.route('/admin/logout')

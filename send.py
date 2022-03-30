@@ -43,36 +43,21 @@ def send_vk(img_name, txt, link='', post=True, rass=True):
         except Exception as e:
             print("fail wall.post")
     if(rass == True):
-        try:
-            rass = Mysql.query("SELECT COUNT(id) FROM `chats` WHERE notify='1'")
+            rass = Mysql.query("SELECT COUNT(id) FROM vk_subscribe WHERE subscribe=1")
             i = 0
             while i < rass['COUNT(id)']:
-                a = []
-                r = Mysql.query(f"SELECT id FROM `chats` WHERE notify='1' LIMIT {i}, 50", fetch="all")
-                for n in r:
-                    a.append(str(n['id']))
-                a = ",".join(a)
-                Vk.send(peer_id=a,message=txt+link,attachment=img,mass=True)
-                i+=50
-                time.sleep(0.2)
-        except Exception as e:
-            print("Vk chat send error")
-
-
-        try:
-            rass = Mysql.query("SELECT COUNT(vkid) FROM `users` WHERE notify='1'")
-            i = 0
-            while i < rass['COUNT(vkid)']:
-                a = []
-                r = Mysql.query(f"SELECT vkid FROM `users` WHERE notify='1' LIMIT {i}, 50", fetch="all")
-                for n in r:
-                    a.append(str(n['vkid']))
-                a = ",".join(a)
-                Vk.send(peer_id=a,message=txt+link,attachment=img,mass=True)
-                i+=50
-                time.sleep(0.2)
-        except Exception as e:
-            print("Vk user send error")
+                try:
+                    a = []
+                    r = Mysql.query(f"SELECT id FROM vk_subscribe WHERE subscribe=1 LIMIT {i}, 50", fetch="all")
+                    for n in r:
+                        a.append(str(n['id']))
+                    a = ",".join(a)
+                    Vk.send(peer_id=a,message=txt+link,attachment=img,mass=True)
+                    i+=50
+                    time.sleep(0.2)
+                except Exception as e:
+                    print("Vk send error")
+                    print(a, i)
     Mysql.close()
 
 def send_ds(img, txt, link, custom=False):

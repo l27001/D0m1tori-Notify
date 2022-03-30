@@ -1,6 +1,6 @@
 -- MariaDB dump 10.19  Distrib 10.6.5-MariaDB, for Linux (aarch64)
 --
--- Host: localhost    Database: user7_d0m1tori
+-- Host: localhost    Database: database
 -- ------------------------------------------------------
 -- Server version	10.6.5-MariaDB-log
 
@@ -14,21 +14,6 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
---
--- Table structure for table `chats`
---
-
-DROP TABLE IF EXISTS `chats`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `chats` (
-  `id` int(11) unsigned NOT NULL,
-  `notify` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  KEY `notify` (`notify`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `notify_id`
@@ -77,18 +62,18 @@ CREATE TABLE `twitch_api_key` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `users`
+-- Table structure for table `vk_subscribe`
 --
 
-DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `vk_subscribe`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `users` (
-  `vkid` int(11) unsigned NOT NULL,
+CREATE TABLE `vk_subscribe` (
+  `id` int(11) unsigned NOT NULL,
   `dostup` tinyint(1) unsigned NOT NULL DEFAULT 0,
-  `notify` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`vkid`),
-  KEY `notify` (`notify`)
+  `subscribe` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `notify` (`subscribe`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -139,4 +124,4 @@ CREATE TABLE `weblog` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-03-29 21:31:47
+-- Dump completed on 2022-03-30 12:23:44
