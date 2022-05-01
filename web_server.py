@@ -4,7 +4,7 @@ from hashlib import sha256
 from flask import Flask, request, abort, render_template, url_for, redirect, flash, g, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from datetime import datetime
-import subprocess, datetime, os, requests, hashlib
+import subprocess, datetime, os, requests, hashlib, multiprocess
 import methods as Methods
 import send
 import config
@@ -238,8 +238,8 @@ def send_():
     if(action is None): return abort(400)
     if(action == "force"):
         data = send.check_stream(config.streamer_info['id'])
-        if('error' in data):
-            return {"status":"warning", "description":"Сейчас трансляция не ведётся"}
+        if(data['status'] != "success"):
+            return {"status":data['status'], "description":data['description']}
         subp(f"{dir_path}/send.py {config.streamer_info['id']}", shell=True, wait=False)
         Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,"Запущена обычная рассылка", 'stream_send',request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка запущена"}, 202
@@ -257,17 +257,16 @@ def send_():
         if(text == ''): return {"status":"warning", "description":"Сообщение не может быть пустым"}
         if(ds == 0 and vk == 0 and post_vk == 0 and tg == 0): return {"status":"warning", "description":"Выберите как минимум один способ рассылки"}
         if(len(text) > 1000): return {"status":"warning", "description":"Размер сообщения не может быть больше 1000 символов"}
-        if(vk == 1 and post_vk == 1):
-            send.send_vk(None, text, '', True, True)
-        elif(vk == 0 and post_vk == 1):
-            send.send_vk(None, text, '', True, False)
-        elif(vk == 1 and post_vk == 0):
-            send.send_vk(None, text, '', False, True)
+        if(post_vk == 1 or vk == 1):
+            # send.send_vk(None, text, '', post_vk, vk)
+            multiprocessing.Process(target=send.send_vk, args=(None, text, '', post_vk, vk), daemon=True).start()
         if(ds == 1):
-            send.send_ds('', text, '', True)
+            # send.send_ds('', text, '', True)
+            multiprocessing.Process(target=send.send_ds, args=('', text, '', True), daemon=True).start()
         if(tg == 1):
-            send.send_tg(text)
-        # Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s)", (g.user.id,f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}, tg:{tg}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
+            # send.send_tg(text)
+            multiprocessing.Process(target=send.send_tg, args=(text,), daemon=True).start()
+        Mysql.query("INSERT INTO weblog (`user`,`date`,`description`,`type`,`text`,`ip`) VALUES (%s,NOW(),%s,%s,%s,%s)", (g.user.id,f"Запущена кастомная рассылка. vk:{vk}, post_vk:{post_vk}, ds:{ds}, tg:{tg}", 'custom_send', text,request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
         return {"status":"success", "description":"Рассылка успешно проведена"}, 202
 
 @app.route('/admin/log', methods=["GET", "POST"])

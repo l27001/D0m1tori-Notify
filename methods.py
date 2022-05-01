@@ -124,7 +124,7 @@ class Vk:
         response = requests.get(f"{self.url}groups.getById", params=params)
         return response.json()['response']
 
-    def upload_img(self, peer_id, file):
+    def upload_img_msg(self, peer_id, file):
         if(self.is_message_allowed(peer_id) == 1):
             params = self.getRequestParams({"peer_id":peer_id})
         else:
@@ -223,17 +223,17 @@ def twitch_api_auth():
             'client_secret': config.twitch_api,
             'grant_type': "client_credentials"
         }
-        auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data).json()
+        auth = requests.post(f"https://id.twitch.tv/oauth2/token", headers=headers, data=data, proxies=config.proxies).json()
         Mysql_.query("DELETE FROM twitch_api_key")
         Mysql_.query("INSERT INTO twitch_api_key (`key_`, `not-after`, `type`, `client_id`) VALUES (%s, %s, %s, %s)", (auth['access_token'], now+auth['expires_in'], auth['token_type'], config.client_id))
         headers.update({
             'Authorization': f"{auth['token_type'].title()} {auth['access_token']}",
-            'Client-ID': config.client_id,
+            'Client-Id': config.client_id,
         })
     else:
         headers.update({
             'Authorization': f"{auth['type'].title()} {auth['key_']}",
-            'Client-ID': auth['client_id'],
+            'Client-Id': auth['client_id'],
             })
     headers.update({'Content-Type': "application/json"})
     Mysql_.close()
@@ -242,7 +242,7 @@ def twitch_api_auth():
 def check_stream():
     headers = twitch_api_auth()
     params = {'user_login': config.streamer_info['id'], 'first': 1}
-    response = requests.get("https://api.twitch.tv/helix/streams", params=params, headers=headers).json()
+    response = requests.get("https://api.twitch.tv/helix/streams", params=params, headers=headers, proxies=config.proxies).json()
     if(response['data'] == []):
         return "Сейчас трансляция не ведётся."
     else:
