@@ -2,4 +2,4 @@ log
 old
 __pycache__
 *TS
-config.example.py
+config*
