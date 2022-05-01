@@ -17,3 +17,9 @@ streamer_info = {'id': '123321', 'login': 'AWESOME_GUY'} # twitch streamer info
 flask_secret_key = "RANDOM_STRING"
 
 tg_info = {'access_token': 'MY_KEY', 'url':'https://api.telegram.org/'} # Telegram data
+
+proxies = {} # No proxy
+# proxies = {
+#         'http': "http://username:password@127.0.0.127:3128"
+#         'https': "https://username:password@127.0.0.127:3128"
+#         }
