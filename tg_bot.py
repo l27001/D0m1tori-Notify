@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import requests, time, builtins, os
+import requests, time, builtins, os, sys
 from requests import ReadTimeout, ConnectTimeout, HTTPError, Timeout, ConnectionError
 import config
 import methods
@@ -29,5 +29,6 @@ except KeyboardInterrupt:
     pass
 except(ConnectTimeout, HTTPError, ReadTimeout, Timeout, ConnectionError):
     print("ERROR", "Запуск не удался.")
+    sys.exit(1)
 finally:
     print("INFO", "Завершение...")

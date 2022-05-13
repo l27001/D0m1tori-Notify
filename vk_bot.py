@@ -32,6 +32,7 @@ def start():
         print("INFO", f"{scrname} успешно запущен.")
         while True:
                 response = Vk.getMessages()
+                if(response == None): continue
                 if('failed' in response):
                     if(response['failed'] == 1):
                         Vk.updateParams(ts=response['ts'])
